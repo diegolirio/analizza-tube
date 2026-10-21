@@ -1,6 +1,7 @@
 plugins {
     id 'java-library'
     id 'io.spring.dependency-management'
+    id 'info.solidsoft.pitest'
 }
 
 group = 'br.com.analizza'
@@ -44,4 +45,20 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+pitest {
+    junit5PluginVersion = '1.2.3'
+    targetClasses = ['br.com.analizza.analizzatube.application.*', 'br.com.analizza.analizzatube.domain.*']
+    // Mesma exclusao do JaCoCo: ponto de entrada e configuracao.
+    excludedClasses = ['*Application*', 'br.com.analizza.analizzatube.configuration.*']
+    // So os unitarios: os *IT nao terminam em Test e ficam de fora.
+    targetTests = ['*Test']
+    outputFormats = ['HTML', 'XML']
+    timestampedReports = false
+    // Projeto recem-criado ainda nao tem classe de logica: zero mutantes nao e erro.
+    failWhenNoMutations = false
+    // Sem mutationThreshold de proposito: o mutation score e diagnostico, nao
+    // gate. Um limiar e ajuste manual do time, depois de revisar os mutantes
+    // equivalentes.
 }
