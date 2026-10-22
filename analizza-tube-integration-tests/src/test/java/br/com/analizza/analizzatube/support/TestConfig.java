@@ -1,6 +1,8 @@
 package br.com.analizza.analizzatube.support;
 
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 
 /**
  * Dubles dos servicos de saida que nao tem container: e-mail, gateway de
@@ -28,5 +30,11 @@ import org.springframework.boot.test.context.TestConfiguration;
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestConfig {
+
+    @Bean
+    @Primary
+    FakeYeroonClient fakeYeroonClient() {
+        return new FakeYeroonClient();
+    }
 
 }

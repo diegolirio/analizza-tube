@@ -1,0 +1,28 @@
+package br.com.analizza.analizzatube.presenter.routes.video.completeUpload;
+
+import br.com.analizza.analizzatube.application.video.completeUpload.*;
+import java.util.List;
+import java.util.UUID;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+public class CompleteUploadRoute {
+    private final CompleteUploadHandler handler;
+
+    public CompleteUploadRoute(CompleteUploadHandler handler) {
+        this.handler = handler;
+    }
+
+    public record CompleteUploadRequest(List<PartRequest> parts) {}
+
+    public record PartRequest(int partNumber, String etag) {}
+
+    @PostMapping("/videos/{id}/upload/complete")
+    public CompleteUploadResult handle(@PathVariable UUID id, @RequestBody CompleteUploadRequest request) {
+        return handler.handle(new CompleteUploadCommand(
+                id,
+                request.parts().stream()
+                        .map(p -> new CompleteUploadCommand.Part(p.partNumber(), p.etag()))
+                        .toList()));
+    }
+}

@@ -2,6 +2,7 @@ package br.com.analizza.analizzatube.support;
 
 import br.com.analizza.analizzatube.AnalizzaTubeApiApplication;
 import org.junit.jupiter.api.BeforeEach;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -35,6 +36,14 @@ public abstract class BaseIntegrationTest {
     private int port;
 
     protected RestTestClient http;
+
+    @Autowired
+    protected FakeYeroonClient yeroon;
+
+    @BeforeEach
+    void resetarDubles() {
+        yeroon.reset();
+    }
 
     @BeforeEach
     void prepararCliente() {

@@ -3,6 +3,7 @@ package br.com.analizza.analizzatube.presenter.configuration.exception;
 import br.com.analizza.analizzatube.domain.BusinessRulesBrokenException;
 import br.com.analizza.analizzatube.domain.VideoNotFoundException;
 import br.com.analizza.analizzatube.infrastructure.data.anticorruptionLayer.yeroon.*;
+import java.net.URI;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,15 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(VideoNotFoundException.class)
     ProblemDetail videoNotFound(VideoNotFoundException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Vídeo não encontrado.");
+        return videoNotFoundProblem();
+    }
+
+    // O Spring preenche "instance" com o path da requisicao quando ela e nula, e
+    // o path carrega o id; um valor explicito mantem o corpo do 404 generico.
+    private static ProblemDetail videoNotFoundProblem() {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Vídeo não encontrado.");
+        problem.setInstance(URI.create("about:blank"));
+        return problem;
     }
 
     @ExceptionHandler(YeroonRejectedException.class)
@@ -41,7 +50,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(YeroonNotFoundException.class)
     ProblemDetail yeroonNotFound(YeroonNotFoundException ex) {
-        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Vídeo não encontrado.");
+        return videoNotFoundProblem();
     }
 
     @ExceptionHandler(YeroonConflictException.class)
