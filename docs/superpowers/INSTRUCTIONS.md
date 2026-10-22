@@ -500,11 +500,11 @@ existe na cabeça de quem o criou é um defeito esperando para ser redescoberto.
 ## Contexto: hospedagem de vídeo pela yeroon play
 
 O analizza-tube é o primeiro cliente da plataforma **yeroon play** e hospeda
-os vídeos por ela. **Nada disto está implementado ainda**: o scaffold só
-registra o contexto, e a integração é a próxima fatia.
+os vídeos por ela. Implementado na fatia `yeroon-play-plugado` (runbook em
+`docs/checkpoints/yeroon-play-plugado.md`).
 
-Contrato: repositório `diegolirio/yeroon-streaming-poc`, branch
-`feat/plataforma-api-v1`, arquivo `docs/api/v1.md`. Leia o contrato antes de
+Contrato: repositório `diegolirio/yeroon-streaming-poc`, branch `main`,
+arquivo `docs/api/v1.md`. Leia o contrato antes de
 implementar; o resumo abaixo não o substitui.
 
 - **O banco do analizza-tube guarda só o `videoId`.** Arquivo, partes,
@@ -526,3 +526,8 @@ implementar; o resumo abaixo não o substitui.
   `infrastructure/data/anticorruptionLayer/yeroon/` (interface) e
   `.../yeroon/impl/` (implementação), no `-core`. Nos testes, um dublê
   `@Primary` substitui o cliente; nenhuma chamada sai da suíte.
+- **Variáveis de ambiente** desta integração (README, sem valor):
+  `YEROON_API_URL` (padrão `https://yeroon.streaming.diegolirio.com`),
+  `YEROON_API_KEY` e `YEROON_WEBHOOK_SECRET` (segredos, só no `.env` local,
+  nunca no git), lidas pelo `-api`; e `ANALIZZA_API_URL` (padrão
+  `http://localhost:8080`), lida pelo `-web` para repassar ao `-api`.
