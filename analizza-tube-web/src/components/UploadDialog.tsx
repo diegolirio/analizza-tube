@@ -14,12 +14,12 @@ export function UploadDialog({ onClose }: { onClose: () => void }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-10 flex items-center justify-center bg-[#0b0a09b3] p-4">
+    <div className="fixed inset-0 z-10 flex items-center justify-center bg-[#0b0a0966] p-4">
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby="upload-title"
-        className="box-border flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col gap-5 overflow-y-auto rounded-[22px] border border-line-strong bg-surface p-6 shadow-[0_28px_56px_#0000008c,0_10px_20px_#0000004d]"
+        className="box-border flex max-h-[calc(100vh-32px)] w-full max-w-[560px] flex-col gap-5 overflow-y-auto rounded-[22px] border border-line-strong bg-surface p-6 shadow-[0_28px_56px_#00000029,0_10px_20px_#0000001a]"
       >
         <div className="flex items-start justify-between gap-3">
           <UploadHeading />
@@ -27,7 +27,7 @@ export function UploadDialog({ onClose }: { onClose: () => void }) {
             type="button"
             onClick={onClose}
             aria-label="Fechar"
-            className="flex size-10 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted transition-colors hover:bg-[#ede8df0d]"
+            className="flex size-10 cursor-pointer items-center justify-center rounded-lg border-0 bg-transparent text-muted transition-colors hover:bg-[#1a1d1a0d]"
           >
             <CloseIcon />
           </button>

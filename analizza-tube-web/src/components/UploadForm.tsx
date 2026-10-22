@@ -54,7 +54,7 @@ export function UploadForm() {
         }}
         className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed bg-deep px-4 py-8 text-center ${dragging ? "border-accent" : "border-line-bold"}`}
       >
-        <span className="flex size-12 items-center justify-center rounded-full bg-[#7a52e02e] text-accent-soft">
+        <span className="flex size-12 items-center justify-center rounded-full bg-[#16803c1f] text-accent-soft">
           <UploadIcon size={22} />
         </span>
         <span className="font-semibold">Arraste o arquivo ou clique para selecionar</span>
@@ -85,7 +85,7 @@ export function UploadForm() {
       )}
       {cancelled && <p className="m-0 text-sm text-muted">Envio cancelado.</p>}
       {error && (
-        <p role="alert" className="m-0 rounded-lg border border-[#e0525240] bg-[#e052521a] px-3 py-2 text-sm text-[#f3b4b4]">
+        <p role="alert" className="m-0 rounded-lg border border-[#b4232340] bg-[#b423230f] px-3 py-2 text-sm text-[#b42323]">
           {error}
         </p>
       )}
@@ -95,7 +95,7 @@ export function UploadForm() {
           type="button"
           disabled={!uploading}
           onClick={() => controller.current?.abort()}
-          className="h-11 cursor-pointer rounded-lg border border-line-strong bg-transparent px-[18px] text-sm font-semibold text-ink transition-colors hover:bg-[#ede8df0d] disabled:cursor-default disabled:opacity-50"
+          className="h-11 cursor-pointer rounded-lg border border-line-strong bg-transparent px-[18px] text-sm font-semibold text-ink transition-colors hover:bg-[#1a1d1a0d] disabled:cursor-default disabled:opacity-50"
         >
           Cancelar
         </button>

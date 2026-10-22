@@ -82,7 +82,7 @@ export function VideoList({ currentId, query = "" }: { currentId?: string; query
               <Link
                 href={`/videos/${v.videoId}`}
                 aria-current={current ? "page" : undefined}
-                className={`flex items-start gap-2.5 rounded-[10px] p-2 text-ink no-underline transition-colors hover:bg-[#ede8df0d] ${current ? "bg-[#7a52e01f]" : ""}`}
+                className={`flex items-start gap-2.5 rounded-[10px] p-2 text-ink no-underline transition-colors hover:bg-[#1a1d1a0d] ${current ? "bg-[#16803c1f]" : ""}`}
               >
                 <span className="relative block h-[72px] w-32 flex-none overflow-hidden rounded-lg border border-line bg-deep">
                   {v.thumbnailUrl && (
@@ -90,7 +90,7 @@ export function VideoList({ currentId, query = "" }: { currentId?: string; query
                     <img src={v.thumbnailUrl} alt="" className="size-full object-cover" />
                   )}
                   {v.status !== "PRONTO" && (
-                    <span className="absolute right-1 bottom-1 rounded bg-[#14110fe6] px-1.5 font-mono text-[11px] leading-[18px]">
+                    <span className="absolute right-1 bottom-1 rounded bg-[#ffffffe6] px-1.5 font-mono text-[11px] leading-[18px]">
                       {statusLabel(v.status)}
                     </span>
                   )}
