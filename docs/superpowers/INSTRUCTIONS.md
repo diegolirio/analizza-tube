@@ -442,6 +442,14 @@ introduz:**
 
 Renomear ou remover uma variável mexe nas mesmas duas listas.
 
+Variáveis da integração com a yeroon play (README, sem valor):
+
+- `YEROON_API_URL`: lida pelo `-api`; padrão na configuração.
+- `YEROON_API_KEY`: lida pelo `-api`; segredo, só no `.env` local.
+- `YEROON_WEBHOOK_SECRET`: lida pelo `-api`; segredo, só no `.env` local.
+- `ANALIZZA_API_URL`: lida pelo `-web`, para onde os Route Handlers repassam;
+  padrão `http://localhost:8080`.
+
 O porquê: o `.env.local` não vai para o repositório, e o README é a única
 lista versionada do que a aplicação precisa para subir. Sem ela, uma variável
 nova sem padrão faz a aplicação parar de subir em toda máquina, e ninguém sabe
@@ -526,8 +534,4 @@ implementar; o resumo abaixo não o substitui.
   `infrastructure/data/anticorruptionLayer/yeroon/` (interface) e
   `.../yeroon/impl/` (implementação), no `-core`. Nos testes, um dublê
   `@Primary` substitui o cliente; nenhuma chamada sai da suíte.
-- **Variáveis de ambiente** desta integração (README, sem valor):
-  `YEROON_API_URL` (padrão `https://yeroon.streaming.diegolirio.com`),
-  `YEROON_API_KEY` e `YEROON_WEBHOOK_SECRET` (segredos, só no `.env` local,
-  nunca no git), lidas pelo `-api`; e `ANALIZZA_API_URL` (padrão
-  `http://localhost:8080`), lida pelo `-web` para repassar ao `-api`.
+- Variáveis de ambiente: ver *Variáveis de ambiente* (`YEROON_*`).

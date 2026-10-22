@@ -66,9 +66,16 @@ Subir é preparação; a conferência é na tela do `-web`.
 - **Id inventado:** abra a URL de um vídeo com um id que não existe. A tela
   mostra "Vídeo não encontrado." e não quebra.
 - **Yeroon fora do ar:** suba a api com `YEROON_API_URL` errada (por exemplo
-  `http://localhost:9`). Lista e envio têm de mostrar mensagem de
-  indisponível (a api responde 502 "Serviço de vídeo indisponível."), sem tela
-  em branco nem erro não tratado no console.
+  `http://localhost:9`). No Network, `/api/videos` responde 502. Esperado na
+  tela, sem tela em branco e sem erro não tratado no console:
+  - lista lateral: aviso "Não foi possível carregar os vídeos."
+    (`VideoList.tsx:67`, `role="alert"`);
+  - modal de envio, ao escolher um arquivo: "O envio falhou. Escolha o mesmo
+    arquivo para retomar." (`UploadForm.tsx:32`, `role="alert"`);
+  - detalhe de um vídeo: "Vídeo não encontrado." (`VideoDetail.tsx:68`; a tela
+    não distingue 502 de 404, qualquer resposta não-ok cai aí).
+  A mensagem "Serviço de vídeo indisponível." é o corpo do 502 da api (visível
+  só na resposta no Network); a tela não a exibe.
 - Enviar arquivo que não é vídeo ou vazio; clicar em enviar duas vezes.
 
 ## O que não está na lista
