@@ -32,7 +32,7 @@ export function UploadDialog({ onClose }: { onClose: () => void }) {
             <CloseIcon />
           </button>
         </div>
-        <UploadForm />
+        <UploadForm onStarted={onClose} />
       </div>
     </div>
   );
