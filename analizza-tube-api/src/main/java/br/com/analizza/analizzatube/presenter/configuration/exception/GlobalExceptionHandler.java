@@ -2,6 +2,7 @@ package br.com.analizza.analizzatube.presenter.configuration.exception;
 
 import br.com.analizza.analizzatube.domain.BusinessRulesBrokenException;
 import br.com.analizza.analizzatube.domain.VideoNotFoundException;
+import br.com.analizza.analizzatube.infrastructure.data.anticorruptionLayer.yeroon.*;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.HttpStatus;
@@ -26,5 +27,30 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(VideoNotFoundException.class)
     ProblemDetail videoNotFound(VideoNotFoundException ex) {
         return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Vídeo não encontrado.");
+    }
+
+    @ExceptionHandler(YeroonRejectedException.class)
+    ProblemDetail yeroonRejected(YeroonRejectedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(
+                HttpStatus.UNPROCESSABLE_ENTITY, "Uma ou mais regras de negócio foram quebradas.");
+        problem.setProperty("errors", ex.errors().stream()
+                .map(error -> Map.of("code", error.code(), "message", error.message()))
+                .toList());
+        return problem;
+    }
+
+    @ExceptionHandler(YeroonNotFoundException.class)
+    ProblemDetail yeroonNotFound(YeroonNotFoundException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, "Vídeo não encontrado.");
+    }
+
+    @ExceptionHandler(YeroonConflictException.class)
+    ProblemDetail yeroonConflict(YeroonConflictException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, "O vídeo não está em estado de receber essa operação.");
+    }
+
+    @ExceptionHandler(YeroonUnavailableException.class)
+    ProblemDetail yeroonUnavailable(YeroonUnavailableException ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_GATEWAY, "Serviço de vídeo indisponível.");
     }
 }

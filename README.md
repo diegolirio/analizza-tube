@@ -8,6 +8,17 @@ Monorepo: `analizza-tube-api` (Spring Boot, entrada HTTP), `analizza-tube-core`
 `make help` lista os alvos. `make run` sobe o Postgres, a api (`:8080`) e o web
 (`:3000`); o mobile roda à parte com `make run-mobile`.
 
+## Variáveis de ambiente
+
+Lidas por `analizza-tube-api/src/main/resources/application.properties`; os
+padrões moram lá.
+
+```
+YEROON_API_URL=
+YEROON_API_KEY=
+YEROON_WEBHOOK_SECRET=
+```
+
 ## Testes
 
 | Comando | O que roda |
