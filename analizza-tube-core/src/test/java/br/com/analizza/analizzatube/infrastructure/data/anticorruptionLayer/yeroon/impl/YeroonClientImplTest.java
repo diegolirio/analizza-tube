@@ -5,6 +5,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import br.com.analizza.analizzatube.infrastructure.configuration.YeroonProperties;
 import br.com.analizza.analizzatube.infrastructure.data.anticorruptionLayer.yeroon.*;
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -19,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 
 class YeroonClientImplTest {
 
@@ -32,6 +37,13 @@ class YeroonClientImplTest {
     private final AtomicReference<String> path = new AtomicReference<>();
     private final AtomicReference<String> auth = new AtomicReference<>();
     private final AtomicReference<String> body = new AtomicReference<>();
+
+    private final ListAppender<ILoggingEvent> logs = new ListAppender<>();
+    private final Logger logger = (Logger) LoggerFactory.getLogger(YeroonClientImpl.class);
+
+    private List<ILoggingEvent> warns() {
+        return logs.list.stream().filter(e -> e.getLevel() == Level.WARN).toList();
+    }
 
     @BeforeEach
     void start() throws IOException {
@@ -50,10 +62,13 @@ class YeroonClientImplTest {
             exchange.close();
         });
         server.start();
+        logs.start();
+        logger.addAppender(logs);
     }
 
     @AfterEach
     void stop() {
+        logger.detachAppender(logs);
         server.stop(0);
     }
 
@@ -197,5 +212,43 @@ class YeroonClientImplTest {
         assertThatThrownBy(() -> client(URI.create("http://127.0.0.1:" + closed)).list())
                 .isInstanceOf(YeroonUnavailableException.class)
                 .satisfies(e -> assertThat(e.getMessage()).doesNotContain(KEY));
+    }
+
+    @Test
+    void erro500RegistraWarnComStatusSemChave() {
+        respond(500, null);
+        assertThatThrownBy(() -> client().list()).isInstanceOf(YeroonUnavailableException.class);
+
+        assertThat(warns()).hasSize(1);
+        assertThat(warns().get(0).getFormattedMessage()).contains("500").doesNotContain(KEY);
+    }
+
+    @Test
+    void falhaDeIoRegistraWarnComAClasseDaExcecaoSemChave() throws IOException {
+        int closed;
+        try (ServerSocket socket = new ServerSocket(0, 0, java.net.InetAddress.getByName("127.0.0.1"))) {
+            closed = socket.getLocalPort();
+        }
+        assertThatThrownBy(() -> client(URI.create("http://127.0.0.1:" + closed)).list())
+                .isInstanceOf(YeroonUnavailableException.class);
+
+        assertThat(warns()).hasSize(1);
+        assertThat(warns().get(0).getFormattedMessage()).containsIgnoringCase("exception").doesNotContain(KEY);
+        assertThat(warns().get(0).getThrowableProxy()).isNull();
+    }
+
+    @Test
+    void chaveEmBrancoRegistraWarnNaInicializacao() {
+        new YeroonClientImpl(new YeroonProperties(URI.create("http://127.0.0.1:1"), " ", "whsec", Duration.ofSeconds(2)));
+
+        assertThat(warns()).hasSize(1);
+        assertThat(warns().get(0).getFormattedMessage()).contains("YEROON_API_KEY");
+    }
+
+    @Test
+    void chaveConfiguradaNaoRegistraWarnNaInicializacao() {
+        client();
+
+        assertThat(warns()).isEmpty();
     }
 }

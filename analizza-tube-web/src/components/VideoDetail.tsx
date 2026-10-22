@@ -3,6 +3,9 @@
 import { useEffect, useState } from "react";
 import { statusLabel } from "@/lib/videoStatus";
 
+// Estados finais: nada mais muda, entao a pesquisa para.
+const TERMINAL = ["PRONTO", "FALHOU", "CANCELADO", "ABANDONADO"];
+
 type Detail = { status: string; fileName: string; failureReason: string | null };
 
 export function VideoDetail({ id }: { id: string }) {
@@ -10,7 +13,8 @@ export function VideoDetail({ id }: { id: string }) {
   const [error, setError] = useState(false);
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const [playerError, setPlayerError] = useState(false);
-  const finished = detail?.status === "PRONTO" || detail?.status === "FALHOU";
+  const finished = detail !== null && TERMINAL.includes(detail.status);
+  const safeId = encodeURIComponent(id);
   const ready = detail?.status === "PRONTO";
 
   useEffect(() => {
@@ -18,7 +22,7 @@ export function VideoDetail({ id }: { id: string }) {
     let cancelled = false;
     const load = async () => {
       try {
-        const res = await fetch(`/api/videos/${id}`);
+        const res = await fetch(`/api/videos/${safeId}`);
         if (!res.ok) throw new Error(String(res.status));
         const body = (await res.json()) as Detail;
         if (!cancelled) {
@@ -35,14 +39,14 @@ export function VideoDetail({ id }: { id: string }) {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [id, finished]);
+  }, [safeId, finished]);
 
   useEffect(() => {
     if (!ready) return;
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/videos/${id}/playback`, { method: "POST" });
+        const res = await fetch(`/api/videos/${safeId}/playback`, { method: "POST" });
         if (!res.ok) throw new Error(String(res.status));
         const body = (await res.json()) as { embedUrl: string };
         if (!cancelled) setEmbedUrl(body.embedUrl);
@@ -53,16 +57,24 @@ export function VideoDetail({ id }: { id: string }) {
     return () => {
       cancelled = true;
     };
-  }, [id, ready]);
+  }, [safeId, ready]);
 
   useEffect(() => {
+    if (!embedUrl) return;
+    let origin: string;
+    try {
+      origin = new URL(embedUrl).origin;
+    } catch {
+      return;
+    }
     const onMessage = (event: MessageEvent) => {
+      if (event.origin !== origin) return;
       const data = event.data as { source?: string; type?: string } | null;
       if (data?.source === "yeroon-player" && data.type === "error") setPlayerError(true);
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, []);
+  }, [embedUrl]);
 
   if (!detail) {
     return <p className="text-muted">{error ? "Vídeo não encontrado." : "Carregando…"}</p>;

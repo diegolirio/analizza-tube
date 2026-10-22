@@ -35,7 +35,11 @@ class ReceiveYeroonWebhookRouteIT extends BaseIntegrationTest {
     }
 
     private static String body(UUID videoId) {
-        return "{\"id\":\"evt\",\"type\":\"video.ready\",\"createdAt\":\"2026-10-21T10:00:00Z\","
+        return body(videoId, "evt");
+    }
+
+    private static String body(UUID videoId, String eventId) {
+        return "{\"id\":\"" + eventId + "\",\"type\":\"video.ready\",\"createdAt\":\"2026-10-21T10:00:00Z\","
                 + "\"data\":{\"videoId\":\"" + videoId + "\",\"status\":\"PRONTO\",\"renditions\":[\"720p\"]}}";
     }
 
@@ -57,28 +61,62 @@ class ReceiveYeroonWebhookRouteIT extends BaseIntegrationTest {
     @Test
     void avisoValidoRegistraEResponde200() throws Exception {
         UUID video = UUID.randomUUID();
-        String body = body(video);
-        post(body, sign(SECRET, Instant.now().getEpochSecond(), body), "d-1", true);
+        String body = body(video, "evt-1");
+        post(body, sign(SECRET, Instant.now().getEpochSecond(), body), "evt-1", true);
 
         assertEquals(1, count());
         assertEquals(video, jdbc.queryForObject(
-                "select video_id from webhook_receipt where delivery_id = 'd-1'", UUID.class));
+                "select video_id from webhook_receipt where delivery_id = 'evt-1'", UUID.class));
     }
 
     @Test
     void avisoRepetidoResponde200SemSegundaLinha() throws Exception {
-        String body = body(UUID.randomUUID());
+        String body = body(UUID.randomUUID(), "evt-2");
         String sig = sign(SECRET, Instant.now().getEpochSecond(), body);
-        post(body, sig, "d-2", true);
-        post(body, sig, "d-2", true);
+        post(body, sig, "evt-2", true);
+        post(body, sig, "evt-2", true);
 
         assertEquals(1, count());
+    }
+
+    @Test
+    void mesmoCorpoReenviadoComOutroCabecalhoDeEntregaDiverge400SemSegundaLinha() throws Exception {
+        String body = body(UUID.randomUUID(), "evt-4");
+        String sig = sign(SECRET, Instant.now().getEpochSecond(), body);
+        post(body, sig, "evt-4", true);
+        http.post().uri("/webhooks/yeroon")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-Yeroon-Event", "video.ready")
+                .header("X-Yeroon-Delivery", "outro-id")
+                .header("X-Yeroon-Signature", sig)
+                .body(body)
+                .exchange()
+                .expectStatus().isBadRequest();
+
+        assertEquals(1, count());
+    }
+
+    @Test
+    void corpoAlteradoResponde401() throws Exception {
+        String body = body(UUID.randomUUID(), "evt-5");
+        String sig = sign(SECRET, Instant.now().getEpochSecond(), body);
+        post(body.replace("PRONTO", "FALHOU"), sig, "evt-5", false);
+
+        assertEquals(0, count());
+    }
+
+    @Test
+    void marcaDeTempoForaDaJanelaDe300sResponde401() throws Exception {
+        String body = body(UUID.randomUUID(), "evt-6");
+        post(body, sign(SECRET, Instant.now().getEpochSecond() - 301, body), "evt-6", false);
+
+        assertEquals(0, count());
     }
 
     @Test
     void assinaturaErradaResponde401SemRegistrar() throws Exception {
         String body = body(UUID.randomUUID());
-        post(body, sign("outro", Instant.now().getEpochSecond(), body), "d-3", false);
+        post(body, sign("outro", Instant.now().getEpochSecond(), body), "evt", false);
 
         assertEquals(0, count());
     }

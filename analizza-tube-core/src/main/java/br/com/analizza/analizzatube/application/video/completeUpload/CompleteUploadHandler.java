@@ -1,7 +1,9 @@
 package br.com.analizza.analizzatube.application.video.completeUpload;
 
 import br.com.analizza.analizzatube.application.ResultCommandHandler;
+import br.com.analizza.analizzatube.domain.RuleChecker;
 import br.com.analizza.analizzatube.domain.VideoNotFoundException;
+import br.com.analizza.analizzatube.domain.rules.RequiredFieldRule;
 import br.com.analizza.analizzatube.domain.repositories.VideoRepository;
 import br.com.analizza.analizzatube.infrastructure.data.anticorruptionLayer.yeroon.YeroonClient;
 import br.com.analizza.analizzatube.infrastructure.data.anticorruptionLayer.yeroon.YeroonCompleted;
@@ -20,6 +22,7 @@ public class CompleteUploadHandler implements ResultCommandHandler<CompleteUploa
 
     @Override
     public CompleteUploadResult handle(CompleteUploadCommand command) {
+        new RuleChecker().checkAllRules(new RequiredFieldRule("parts", command.parts()));
         if (!videos.existsById(command.videoId())) throw new VideoNotFoundException();
         YeroonCompleted completed = yeroon.complete(
                 command.videoId(),

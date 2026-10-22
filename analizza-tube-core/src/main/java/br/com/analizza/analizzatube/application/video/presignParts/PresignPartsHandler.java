@@ -1,7 +1,9 @@
 package br.com.analizza.analizzatube.application.video.presignParts;
 
 import br.com.analizza.analizzatube.application.ResultCommandHandler;
+import br.com.analizza.analizzatube.domain.RuleChecker;
 import br.com.analizza.analizzatube.domain.VideoNotFoundException;
+import br.com.analizza.analizzatube.domain.rules.RequiredFieldRule;
 import br.com.analizza.analizzatube.domain.repositories.VideoRepository;
 import br.com.analizza.analizzatube.infrastructure.data.anticorruptionLayer.yeroon.YeroonClient;
 import org.springframework.stereotype.Component;
@@ -18,6 +20,7 @@ public class PresignPartsHandler implements ResultCommandHandler<PresignPartsCom
 
     @Override
     public PresignPartsResult handle(PresignPartsCommand command) {
+        new RuleChecker().checkAllRules(new RequiredFieldRule("partNumbers", command.partNumbers()));
         if (!videos.existsById(command.videoId())) throw new VideoNotFoundException();
         return new PresignPartsResult(yeroon.partUrls(command.videoId(), command.partNumbers()).stream()
                 .map(p -> new PresignPartsResult.PartUrl(p.partNumber(), p.url().toString()))

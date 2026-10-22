@@ -41,4 +41,16 @@ class PresignUploadPartsRouteIT extends BaseIntegrationTest {
         assertEquals(0, yeroon.calls());
         assertFalse(new String(body).contains(id.toString()));
     }
+
+    @Test
+    void partNumbersAusenteVira422() {
+        UUID id = UUID.randomUUID();
+        videos.save(Video.register(id, Instant.now()));
+
+        http.post().uri("/videos/{id}/upload/part-urls", id).contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of())
+                .exchange().expectStatus().isEqualTo(422)
+                .expectBody().jsonPath("$.errors[0].code").isEqualTo("required.partNumbers")
+                .jsonPath("$.errors[0].message").isNotEmpty();
+    }
 }

@@ -46,4 +46,19 @@ class InitUploadRouteIT extends BaseIntegrationTest {
                 .expectBody().jsonPath("$.errors[0].code").isEqualTo("video.size");
         assertEquals(antes, videos.findAllIds());
     }
+
+    @Test
+    void camposAusentesViram422ComCodigoPorCampo() {
+        var antes = videos.findAllIds();
+        http.post().uri("/videos/uploads").contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of())
+                .exchange().expectStatus().isEqualTo(422)
+                .expectBody()
+                .jsonPath("$.errors.length()").isEqualTo(3)
+                .jsonPath("$.errors[?(@.code=='required.fileName')]").exists()
+                .jsonPath("$.errors[?(@.code=='required.contentType')]").exists()
+                .jsonPath("$.errors[?(@.code=='required.sizeBytes')]").exists()
+                .jsonPath("$.errors[0].message").isNotEmpty();
+        assertEquals(antes, videos.findAllIds());
+    }
 }

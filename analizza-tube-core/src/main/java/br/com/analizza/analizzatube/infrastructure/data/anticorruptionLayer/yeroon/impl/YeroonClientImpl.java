@@ -35,6 +35,9 @@ public class YeroonClientImpl implements YeroonClient {
         JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(jdk);
         factory.setReadTimeout(properties.timeout());
         String key = properties.apiKey() == null ? "" : properties.apiKey();
+        if (key.isBlank()) {
+            log.warn("YEROON_API_KEY (yeroon.api-key) esta vazia: toda chamada ao yeroon play sera recusada.");
+        }
         this.http = RestClient.builder()
                 .baseUrl(properties.apiUrl().toString())
                 .requestFactory(factory)
@@ -118,6 +121,8 @@ public class YeroonClientImpl implements YeroonClient {
             throw e;
         } catch (RestClientException e) {
             // A mensagem da causa pode citar a URL, nunca o cabeçalho Authorization.
+            // Registra so a classe da excecao: sem mensagem, cabecalhos nem chave.
+            log.warn("yeroon indisponivel ({})", e.getClass().getSimpleName());
             throw new YeroonUnavailableException("Serviço de vídeo indisponível.", e);
         }
     }
@@ -137,6 +142,7 @@ public class YeroonClientImpl implements YeroonClient {
             // Chave recusada: configuração, não do usuário. Nunca registrar a chave inteira.
             log.error("yeroon recusou a chave de API (status {})", status.value());
         }
+        log.warn("yeroon indisponivel (status {})", status.value());
         return new YeroonUnavailableException("Serviço de vídeo indisponível (status " + status.value() + ").");
     }
 

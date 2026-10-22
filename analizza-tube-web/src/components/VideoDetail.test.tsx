@@ -38,10 +38,54 @@ test("erroDoPlayerMostraMensagem", async () => {
   await screen.findByTitle("Player");
   act(() => {
     window.dispatchEvent(
-      new MessageEvent("message", { data: { source: "yeroon-player", type: "error" } }),
+      new MessageEvent("message", {
+        origin: "https://p",
+        data: { source: "yeroon-player", type: "error" },
+      }),
     );
   });
   await waitFor(() =>
     expect(screen.getByText("Não foi possível tocar o vídeo.")).toBeInTheDocument(),
   );
+});
+
+test("erroDeOutraOrigemEIgnorado", async () => {
+  stubFetch("PRONTO");
+  render(<VideoDetail id="v1" />);
+  await screen.findByTitle("Player");
+  act(() => {
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        origin: "https://evil.example",
+        data: { source: "yeroon-player", type: "error" },
+      }),
+    );
+  });
+  expect(screen.getByTitle("Player")).toBeInTheDocument();
+  expect(screen.queryByText("Não foi possível tocar o vídeo.")).toBeNull();
+});
+
+test.each(["CANCELADO", "ABANDONADO", "FALHOU"])("%sBuscaUmaVezEParaDePesquisar", async (status) => {
+  vi.useFakeTimers();
+  try {
+    const fetchMock = stubFetch(status);
+    render(<VideoDetail id="v1" />);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(30000);
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("idComCaracteresEspeciaisVaiCodificadoNaUrl", async () => {
+  const fetchMock = stubFetch("PROCESSANDO");
+  render(<VideoDetail id="a/b?c" />);
+  await waitFor(() => expect(fetchMock).toHaveBeenCalled());
+  expect(fetchMock.mock.calls[0][0]).toBe("/api/videos/a%2Fb%3Fc");
 });

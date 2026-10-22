@@ -21,7 +21,7 @@ public class CompleteUploadRoute {
     public CompleteUploadResult handle(@PathVariable UUID id, @RequestBody CompleteUploadRequest request) {
         return handler.handle(new CompleteUploadCommand(
                 id,
-                request.parts().stream()
+                request.parts() == null ? null : request.parts().stream()
                         .map(p -> new CompleteUploadCommand.Part(p.partNumber(), p.etag()))
                         .toList()));
     }

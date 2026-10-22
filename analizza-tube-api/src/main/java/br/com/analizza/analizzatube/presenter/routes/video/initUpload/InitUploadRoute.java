@@ -12,7 +12,7 @@ public class InitUploadRoute {
         this.handler = handler;
     }
 
-    public record InitUploadRequest(String fileName, String contentType, long sizeBytes) {}
+    public record InitUploadRequest(String fileName, String contentType, Long sizeBytes) {}
 
     @PostMapping("/videos/uploads")
     @ResponseStatus(HttpStatus.CREATED)

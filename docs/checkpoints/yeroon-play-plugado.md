@@ -75,7 +75,15 @@ Subir é preparação; a conferência é na tela do `-web`.
   - detalhe de um vídeo: "Vídeo não encontrado." (`VideoDetail.tsx:68`; a tela
     não distingue 502 de 404, qualquer resposta não-ok cai aí).
   A mensagem "Serviço de vídeo indisponível." é o corpo do 502 da api (visível
-  só na resposta no Network); a tela não a exibe.
+  só na resposta no Network); a tela não a exibe. No log da api aparece um
+  `WARN` "yeroon indisponivel (...)" com o status ou a classe da exceção
+  (nunca cabeçalho nem chave); com `YEROON_API_KEY` vazia, o `WARN` sai uma
+  vez na subida.
+- **Resposta do "complete" perdida:** se a chamada de completar der certo no
+  yeroon mas a resposta se perder (rede cai na volta), escolher o mesmo
+  arquivo de novo **começa um upload novo**: aparece um segundo vídeo na
+  lista, e o primeiro segue sendo processado. Limitação esperada desta
+  fatia, não é defeito a investigar.
 - Enviar arquivo que não é vídeo ou vazio; clicar em enviar duas vezes.
 
 ## O que não está na lista

@@ -36,16 +36,20 @@ public class ReceiveYeroonWebhookRoute {
                     .body(ProblemDetail.forStatus(HttpStatus.UNAUTHORIZED));
         }
         UUID videoId;
+        String eventId;
         try {
-            JsonNode id = JSON.readTree(rawBody).path("data").path("videoId");
-            videoId = UUID.fromString(id.asString(""));
+            JsonNode root = JSON.readTree(rawBody);
+            videoId = UUID.fromString(root.path("data").path("videoId").asString(""));
+            // O id do corpo e assinado; o cabecalho X-Yeroon-Delivery nao e.
+            eventId = root.path("id").asString("");
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(ProblemDetail.forStatus(HttpStatus.BAD_REQUEST));
         }
-        if (deliveryId == null || deliveryId.isBlank() || eventType == null || eventType.isBlank()) {
+        if (eventId.isBlank() || eventType == null || eventType.isBlank()
+                || (deliveryId != null && !deliveryId.equals(eventId))) {
             return ResponseEntity.badRequest().body(ProblemDetail.forStatus(HttpStatus.BAD_REQUEST));
         }
-        handler.handle(new ReceiveYeroonEventCommand(deliveryId, eventType, videoId));
+        handler.handle(new ReceiveYeroonEventCommand(eventId, eventType, videoId));
         return ResponseEntity.ok().build();
     }
 }
