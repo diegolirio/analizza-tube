@@ -510,7 +510,7 @@ O analizza-tube é o primeiro cliente da plataforma **yeroon play** e hospeda
 os vídeos por ela. Implementado na fatia `yeroon-play-plugado` (runbook em
 `docs/checkpoints/yeroon-play-plugado.md`).
 
-Contrato: repositório `diegolirio/yeroon-streaming-poc`, branch `main`,
+Contrato: repositório `bjjdream/yeroon-play`, branch `main`,
 arquivo `docs/api/v1.md`. Leia o contrato antes de
 implementar; o resumo abaixo não o substitui.
 

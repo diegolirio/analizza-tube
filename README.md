@@ -11,7 +11,7 @@ Monorepo: `analizza-tube-api` (Spring Boot, entrada HTTP), `analizza-tube-core`
 ## Instalação
 
 Os vídeos são hospedados pela **yeroon play** (API v1 em
-`https://yeroon.streaming.diegolirio.com`). Sem a chave dela, o app sobe, mas
+`https://api.dev.play.yeroon.video`). Sem a chave dela, o app sobe, mas
 a lista responde "Não foi possível carregar os vídeos.".
 
 ### 1. Requisitos
@@ -24,7 +24,7 @@ a lista responde "Não foi possível carregar os vídeos.".
 | `make`, `curl`, `jq` | — | alvos do Makefile e cadastro na yeroon |
 
 As portas `5432`, `8080` e `3000` precisam estar livres. Se outro projeto
-local estiver usando alguma delas (por exemplo, o `yeroon-stream-poc`), pare-o
+local estiver usando alguma delas (por exemplo, o `yeroon-play`), pare-o
 antes.
 
 ### 2. Dependências e banco
@@ -42,7 +42,7 @@ em que esses valores aparecem. Grave a resposta direto num arquivo, assim os
 valores não passam pela tela nem ficam no histórico do shell:
 
 ```bash
-curl -sS -X POST https://yeroon.streaming.diegolirio.com/admin/tenants \
+curl -sS -X POST https://api.dev.play.yeroon.video/admin/tenants \
   -H "X-Admin-Token: $(cat ~/.yeroon-admin-token)" \
   -H "Content-Type: application/json" \
   -d '{"name":"analizza-tube","allowedOrigins":["http://localhost:3000"]}' \
@@ -96,7 +96,7 @@ runbook [docs/checkpoints/yeroon-play-plugado.md](docs/checkpoints/yeroon-play-p
 
 Como um app se integra à yeroon play depois de ter a chave e o cadastro
 (Instalação, passo 3). O contrato completo da API é o `docs/api/v1.md` do
-repositório `diegolirio/yeroon-streaming-poc`. Cada passo abaixo aponta onde o
+repositório `bjjdream/yeroon-play`. Cada passo abaixo aponta onde o
 analizza-tube implementa a integração, para servir de modelo.
 
 ### Quem é quem
@@ -105,10 +105,10 @@ analizza-tube implementa a integração, para servir de modelo.
 |---|---|---|---|
 | **analizza-tube web** | analizza-tube | Navegador + servidor Next (`:3000`) | Telas. Os Route Handlers `/api/videos/**` repassam ao analizza-tube api |
 | **analizza-tube api** | analizza-tube | Spring Boot (`:8080`) | Guarda a chave `yk_` e só o `videoId`. Chama a v1 da yeroon e recebe o webhook |
-| **yeroon api (v1)** | yeroon play | `https://yeroon.streaming.diegolirio.com` | Cria o upload, assina as URLs das partes, emite o token de reprodução e manda o webhook |
-| **R2 da yeroon** | yeroon play | bucket `yeroon-stream-poc-dev` no Cloudflare R2 | Guarda o original e o HLS. É **da yeroon**, não do analizza-tube |
+| **yeroon api (v1)** | yeroon play | `https://api.dev.play.yeroon.video` | Cria o upload, assina as URLs das partes, emite o token de reprodução e manda o webhook |
+| **R2 da yeroon** | yeroon play | bucket `yeroon-play-bucket-dev` no Cloudflare R2 | Guarda o original e o HLS. É **da yeroon**, não do analizza-tube |
 | **yeroon async** | yeroon play | VPS da yeroon | Converte o original em HLS com ffmpeg |
-| **yeroon web (player)** | yeroon play | `https://yeroon.streaming.poc.diegolirio.com` | Página `/embed/{token}` que o iframe abre |
+| **yeroon web (player)** | yeroon play | `https://play.dev.yeroon.video` | Página `/embed/{token}` que o iframe abre |
 
 Nas seções abaixo, **"seu back"** é o analizza-tube api e **"seu front"** é
 o analizza-tube web. Tudo o que é `/v1/...` é a yeroon.
@@ -126,7 +126,7 @@ com **URL pré-assinada** (presigned URL do S3):
    yeroon api, que tem as credenciais do R2, gera para cada parte uma URL de
    `UploadPart` **assinada**. A assinatura vale 1 h, só para aquele objeto,
    aquele upload e aquele número de parte. A URL é
-   `https://<conta>.r2.cloudflarestorage.com/yeroon-stream-poc-dev/originais/<videoId>?partNumber=N&uploadId=…&X-Amz-Signature=…`.
+   `https://<conta>.r2.cloudflarestorage.com/yeroon-play-bucket-dev/originais/<videoId>?partNumber=N&uploadId=…&X-Amz-Signature=…`.
 3. O navegador faz `PUT` nessa URL com os bytes da parte. O R2 confere a
    assinatura, aceita e devolve o `ETag`. Quem autoriza é a assinatura na
    própria URL, então o navegador não precisa de chave nenhuma.
@@ -222,7 +222,7 @@ acontece. O status continua chegando pela consulta `GET /videos/{id}`.
 
 **1. Cliente da v1.** Faça um cliente HTTP com
 `Authorization: Bearer ${YEROON_API_KEY}` e base
-`https://yeroon.streaming.diegolirio.com`. Converta as respostas de erro da
+`https://api.dev.play.yeroon.video`. Converta as respostas de erro da
 v1 assim:
 
 | v1 | Seu back responde | Exceção no analizza-tube |

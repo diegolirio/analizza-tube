@@ -19,13 +19,13 @@ Subir é preparação; a conferência é na tela do `-web`.
    - os secrets `STREAM_PLATFORM_ADMIN_TOKEN` e
      `STREAM_PLATFORM_PLAYBACK_TOKEN_SECRET` e a variável
      `STREAM_PLATFORM_PLAYER_BASE_URL` no environment `development` do
-     `diegolirio/yeroon-streaming-poc`;
+     `bjjdream/yeroon-play`;
    - o CORS do R2 liberando `http://localhost:3000` (`deploy/r2-cors.json`).
 2. **Cadastrar o cliente** (quem tem o token de administrador). A resposta traz
    `apiKey` e `webhookSecret` uma única vez:
 
    ```bash
-   curl -sS -X POST "https://yeroon.streaming.diegolirio.com/admin/tenants" \
+   curl -sS -X POST "https://api.dev.play.yeroon.video/admin/tenants" \
      -H "X-Admin-Token: $STREAM_PLATFORM_ADMIN_TOKEN" \
      -H "Content-Type: application/json" \
      -d '{"name":"analizza-tube","allowedOrigins":["http://localhost:3000"]}'
