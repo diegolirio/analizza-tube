@@ -46,7 +46,6 @@ dist/
 *.tsbuildinfo
 
 # --- Ambiente ---
-.env
 .env.local
 .env.*.local
 
