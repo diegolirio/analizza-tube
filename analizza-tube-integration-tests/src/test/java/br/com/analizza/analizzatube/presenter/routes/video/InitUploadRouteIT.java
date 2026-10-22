@@ -37,12 +37,13 @@ class InitUploadRouteIT extends BaseIntegrationTest {
 
     @Test
     void rejeicaoDoYeroonVira422ComCodigo() {
+        var antes = videos.findAllIds();
         yeroon.failNext(new YeroonRejectedException(List.of(new YeroonError("video.size", "grande demais"))));
 
         http.post().uri("/videos/uploads").contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("fileName", "a.mp4", "contentType", "video/mp4", "sizeBytes", 1))
                 .exchange().expectStatus().isEqualTo(422)
                 .expectBody().jsonPath("$.errors[0].code").isEqualTo("video.size");
-        assertTrue(videos.findAllIds().stream().noneMatch(yeroon.videos::containsKey));
+        assertEquals(antes, videos.findAllIds());
     }
 }
