@@ -1,22 +1,22 @@
 @import "tailwindcss";
 
-/* Visual "yeroon play" (mockup em Design, sistema Analizza): fundo escuro
-   quente, texto creme, acento violeta. Um tema so, escuro. */
+/* Visual "yeroon play" (mockup em Design, sistema Analizza): fundo branco,
+   texto quase preto, acento verde. Um tema so, claro. */
 @theme {
-  --color-ground: #1a1815;
-  --color-surface: #221f1b;
-  --color-field: #2a2722;
-  --color-deep: #14110f;
-  --color-ink: #ede8df;
-  --color-muted: #b6aea1;
-  --color-faint: #8a8378;
-  --color-accent: #7a52e0;
-  --color-accent-hover: #8c66e8;
-  --color-accent-soft: #c8b5f3;
-  --color-accent-deep: #4a1fb8;
-  --color-line: #ede8df12;
-  --color-line-strong: #ede8df1f;
-  --color-line-bold: #ede8df33;
+  --color-ground: #ffffff;
+  --color-surface: #f7f8f7;
+  --color-field: #f1f3f1;
+  --color-deep: #eef1ee;
+  --color-ink: #1a1d1a;
+  --color-muted: #545b55;
+  --color-faint: #757c76;
+  --color-accent: #16803c;
+  --color-accent-hover: #1c9447;
+  --color-accent-soft: #116a31;
+  --color-accent-deep: #0b5a28;
+  --color-line: #1a1d1a14;
+  --color-line-strong: #1a1d1a24;
+  --color-line-bold: #1a1d1a40;
 
   --font-sans: var(--font-geist-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, Menlo, monospace;
@@ -24,7 +24,7 @@
 }
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
@@ -37,7 +37,7 @@ body {
 
 :where(button, input, select, textarea, a):focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px #4a1fb873;
+  box-shadow: 0 0 0 3px #0b5a2873;
 }
 
 ::placeholder {

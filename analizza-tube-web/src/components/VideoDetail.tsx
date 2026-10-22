@@ -92,11 +92,11 @@ export function VideoDetail({ id }: { id: string }) {
       ) : (
         <div className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-2xl border border-line bg-deep p-6 text-center">
           {detail.status === "FALHOU" ? (
-            <p role="alert" className="m-0 text-sm text-[#f3b4b4]">
+            <p role="alert" className="m-0 text-sm text-[#b42323]">
               Falha no processamento: {detail.failureReason}
             </p>
           ) : playerError ? (
-            <p role="alert" className="m-0 text-sm text-[#f3b4b4]">
+            <p role="alert" className="m-0 text-sm text-[#b42323]">
               Não foi possível tocar o vídeo.
             </p>
           ) : (
