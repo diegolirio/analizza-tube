@@ -8,6 +8,8 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.client.RestTestClient;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
@@ -30,6 +32,11 @@ public abstract class BaseIntegrationTest {
 
     static {
         DATABASE.start();
+    }
+
+    @DynamicPropertySource
+    static void segredoDoWebhook(DynamicPropertyRegistry registry) {
+        registry.add("yeroon.webhook-secret", () -> "whsec_teste");
     }
 
     @LocalServerPort
