@@ -2,7 +2,7 @@ package br.com.analizza.analizzatube.support;
 
 import br.com.analizza.analizzatube.infrastructure.data.anticorruptionLayer.yeroon.*;
 import java.net.URI;
-import java.util.ArrayList;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -88,12 +88,15 @@ public class FakeYeroonClient implements YeroonClient {
     @Override
     public List<YeroonVideoSummary> list() {
         enter();
-        return new ArrayList<>();
+        return videos.values().stream()
+                .map(v -> new YeroonVideoSummary(v.videoId(), v.fileName(), v.status(), Instant.now(), v.thumbnailUrl()))
+                .toList();
     }
 
     @Override
     public YeroonPlayback playbackToken(UUID videoId) {
         enter();
-        throw new UnsupportedOperationException("nao usado nesta fatia");
+        return new YeroonPlayback(
+                URI.create("https://play.example/embed/" + videoId), Instant.now().plusSeconds(300));
     }
 }

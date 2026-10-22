@@ -1,0 +1,9 @@
+package br.com.analizza.analizzatube.application.video.listVideos;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+
+public record ListVideosResult(List<Item> videos) {
+    public record Item(UUID videoId, String fileName, String status, Instant createdAt, String thumbnailUrl) {}
+}
