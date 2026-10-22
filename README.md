@@ -99,25 +99,126 @@ Como um app se integra à yeroon play depois de ter a chave e o cadastro
 repositório `diegolirio/yeroon-streaming-poc`. Cada passo abaixo aponta onde o
 analizza-tube implementa a integração, para servir de modelo.
 
+### Quem é quem
+
+| Peça | Dono | Onde roda | O que faz |
+|---|---|---|---|
+| **analizza-tube web** | analizza-tube | Navegador + servidor Next (`:3000`) | Telas. Os Route Handlers `/api/videos/**` repassam ao analizza-tube api |
+| **analizza-tube api** | analizza-tube | Spring Boot (`:8080`) | Guarda a chave `yk_` e só o `videoId`. Chama a v1 da yeroon e recebe o webhook |
+| **yeroon api (v1)** | yeroon play | `https://yeroon.streaming.diegolirio.com` | Cria o upload, assina as URLs das partes, emite o token de reprodução e manda o webhook |
+| **R2 da yeroon** | yeroon play | bucket `yeroon-stream-poc-dev` no Cloudflare R2 | Guarda o original e o HLS. É **da yeroon**, não do analizza-tube |
+| **yeroon async** | yeroon play | VPS da yeroon | Converte o original em HLS com ffmpeg |
+| **yeroon web (player)** | yeroon play | `https://yeroon.streaming.poc.diegolirio.com` | Página `/embed/{token}` que o iframe abre |
+
+Nas seções abaixo, **"seu back"** é o analizza-tube api e **"seu front"** é
+o analizza-tube web. Tudo o que é `/v1/...` é a yeroon.
+
+### Como o navegador grava no R2 da yeroon sem ter credencial
+
+Sim: o upload vai **direto do navegador para o R2 da yeroon**. Nem o
+analizza-tube api nem a yeroon api recebem os bytes do vídeo. Isso funciona
+com **URL pré-assinada** (presigned URL do S3):
+
+1. O analizza-tube api chama `POST /v1/videos/uploads`. A yeroon api abre um
+   *multipart upload* no R2 dela (`CreateMultipartUpload`) e devolve o
+   `videoId`, o tamanho de cada parte e quantas partes são.
+2. O analizza-tube api chama `POST /v1/videos/{id}/upload/part-urls`. A
+   yeroon api, que tem as credenciais do R2, gera para cada parte uma URL de
+   `UploadPart` **assinada**. A assinatura vale 1 h, só para aquele objeto,
+   aquele upload e aquele número de parte. A URL é
+   `https://<conta>.r2.cloudflarestorage.com/yeroon-stream-poc-dev/originais/<videoId>?partNumber=N&uploadId=…&X-Amz-Signature=…`.
+3. O navegador faz `PUT` nessa URL com os bytes da parte. O R2 confere a
+   assinatura, aceita e devolve o `ETag`. Quem autoriza é a assinatura na
+   própria URL, então o navegador não precisa de chave nenhuma.
+4. Para o navegador poder fazer esse `PUT` e ler o `ETag`, o **CORS do bucket
+   da yeroon** libera a origem do analizza-tube web (`http://localhost:3000`)
+   com `PUT` e `ExposeHeaders: ETag`. Uma origem nova precisa ser pedida ao
+   administrador da yeroon.
+5. O `complete` (`CompleteMultipartUpload`) junta as partes no R2. A partir
+   daí, a conversão e o HLS ficam todos dentro da yeroon.
+
+A reprodução segue a mesma ideia. O player da yeroon lê as playlists pela
+yeroon api, e os segmentos `.ts` vêm do R2 da yeroon por URLs GET assinadas.
+
+### O fluxo completo
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor U as Usuário
+    participant AW as analizza-tube web<br/>(navegador + Next)
+    participant AA as analizza-tube api<br/>(guarda yk_ e videoId)
+    participant YA as yeroon api (v1)
+    participant R2 as R2 da yeroon<br/>(bucket)
+    participant YS as yeroon async<br/>(ffmpeg)
+    participant YP as yeroon web<br/>(player /embed)
+
+    rect rgba(122,82,224,0.08)
+    Note over U,R2: Upload
+    U->>AW: escolhe o arquivo e clica Enviar
+    AW->>AA: POST /videos/uploads {fileName, contentType, sizeBytes}
+    AA->>YA: POST /v1/videos/uploads (Bearer yk_)
+    YA->>R2: CreateMultipartUpload
+    YA-->>AA: videoId, partSizeBytes, partCount
+    AA->>AA: grava video(id = videoId)
+    AA-->>AW: videoId, partSizeBytes, partCount
+    AW->>AA: POST /videos/{id}/upload/part-urls {partNumbers}
+    AA->>YA: POST /v1/videos/{id}/upload/part-urls (Bearer yk_)
+    YA-->>AA: URLs de UploadPart pré-assinadas (1 h)
+    AA-->>AW: urls
+    loop cada parte (4 em paralelo)
+        AW->>R2: PUT bytes na URL assinada (CORS libera a origem do analizza-tube)
+        R2-->>AW: 200 + ETag
+    end
+    AW->>AA: POST /videos/{id}/upload/complete {parts: partNumber + etag}
+    AA->>YA: POST /v1/videos/{id}/upload/complete (Bearer yk_)
+    YA->>R2: CompleteMultipartUpload
+    YA-->>AA: status ENVIADO
+    AA-->>AW: status ENVIADO
+    end
+
+    rect rgba(122,82,224,0.08)
+    Note over YA,YS: Conversão (só dentro da yeroon)
+    YS->>R2: baixa o original
+    YS->>R2: sobe HLS (master, qualidades, segmentos .ts)
+    YS->>YA: vídeo PRONTO (ou FALHOU)
+    YA-->>AA: webhook video.ready, assinado (X-Yeroon-Signature)
+    AA->>AA: confere HMAC e janela de 300 s, deduplica pelo id
+    AW->>AA: GET /videos/{id} (a cada 5 s até PRONTO)
+    AA->>YA: GET /v1/videos/{id}
+    YA-->>AA: status
+    AA-->>AW: status
+    end
+
+    rect rgba(122,82,224,0.08)
+    Note over U,YP: Reprodução
+    AW->>AA: POST /videos/{id}/playback
+    AA->>YA: POST /v1/videos/{id}/playback-token (Bearer yk_)
+    YA-->>AA: token (JWT, 6 h), embedUrl, hlsUrl
+    AA-->>AW: embedUrl, expiresAt
+    AW->>YP: iframe src = embedUrl (/embed/{token})
+    YP->>YA: playlists /play/{token}/... (token no caminho)
+    YA-->>YP: playlists com segmentos assinados
+    YP->>R2: GET dos segmentos .ts
+    YP-->>AW: postMessage (ready, play, timeupdate, error)
+    U->>YP: assiste
+    end
 ```
-front ──► seu back ──Bearer yk_──► POST /v1/videos/uploads           → videoId, partSizeBytes, partCount
-front ──────────────────────────► PUT de cada parte na URL assinada (direto no R2)
-front ──► seu back ──Bearer yk_──► POST /v1/videos/{id}/upload/complete
-yeroon ──webhook assinado──────► seu back: video.ready | video.failed
-front ──► seu back ──Bearer yk_──► POST /v1/videos/{id}/playback-token → embedUrl
-front ──────────────────────────► <iframe src="{embedUrl}">
-```
+
+Sem `webhookUrl` cadastrado, como no ambiente local, o passo do webhook não
+acontece. O status continua chegando pela consulta `GET /videos/{id}`.
 
 **Três regras valem para tudo:**
 
-1. **A chave `yk_` fica só no back.** O front nunca a recebe. Ele fala com o
-   seu back, que repassa as chamadas à v1.
-2. **Guarde só o `videoId`.** Arquivo, status, qualidades e mídia são da
-   yeroon. Leia o status da v1 quando precisar mostrá-lo.
-3. **Os bytes não passam pelo seu back.** O front faz o `PUT` das partes
-   direto nas URLs assinadas que a v1 devolve.
+1. **A chave `yk_` fica só no analizza-tube api.** O navegador nunca a
+   recebe: ele fala com o servidor Next do analizza-tube, que repassa ao
+   analizza-tube api, que chama a v1 da yeroon.
+2. **O analizza-tube guarda só o `videoId`.** Arquivo, status, qualidades e
+   mídia ficam na yeroon. Leia o status da v1 quando precisar mostrá-lo.
+3. **Os bytes não passam por nenhum back.** O navegador faz o `PUT` das partes
+   direto no R2 da yeroon, pelas URLs assinadas que a v1 devolve.
 
-### Back
+### Back (analizza-tube api)
 
 **1. Cliente da v1.** Faça um cliente HTTP com
 `Authorization: Bearer ${YEROON_API_KEY}` e base
@@ -184,7 +285,7 @@ boolean ok = MessageDigest.isEqual(esperado.getBytes(UTF_8), v1.getBytes(UTF_8))
 Modelo: `presenter/configuration/security/YeroonWebhookSignature.java` e
 `presenter/routes/webhook/receiveYeroonWebhook/ReceiveYeroonWebhookRoute.java`.
 
-### Front
+### Front (analizza-tube web)
 
 **1. Rotas do próprio front.** O navegador fala só com o seu servidor. No
 Next, cada Route Handler em `src/app/api/videos/**` repassa ao back
