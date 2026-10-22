@@ -447,8 +447,7 @@ Variáveis da integração com a yeroon play (README, sem valor):
 - `YEROON_API_URL`: lida pelo `-api`; padrão na configuração.
 - `YEROON_API_KEY`: lida pelo `-api`; segredo, só no `.env` local.
 - `YEROON_WEBHOOK_SECRET`: lida pelo `-api`; segredo, só no `.env` local.
-- `ANALIZZA_API_URL`: lida pelo `-web`, para onde os Route Handlers repassam;
-  padrão `http://localhost:8080`.
+- `ANALIZZA_API_URL`: lida pelo `-web`, para onde os Route Handlers repassam.
 
 O porquê: o `.env.local` não vai para o repositório, e o README é a única
 lista versionada do que a aplicação precisa para subir. Sem ela, uma variável
@@ -534,4 +533,4 @@ implementar; o resumo abaixo não o substitui.
   `infrastructure/data/anticorruptionLayer/yeroon/` (interface) e
   `.../yeroon/impl/` (implementação), no `-core`. Nos testes, um dublê
   `@Primary` substitui o cliente; nenhuma chamada sai da suíte.
-- Variáveis de ambiente: ver *Variáveis de ambiente* (`YEROON_*`).
+- Variáveis de ambiente: ver *Variáveis de ambiente* (`YEROON_*` e `ANALIZZA_API_URL`; o `-web` assume `http://localhost:8080` quando esta última falta).

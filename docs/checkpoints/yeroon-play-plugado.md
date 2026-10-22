@@ -70,7 +70,7 @@ Subir é preparação; a conferência é na tela do `-web`.
   tela, sem tela em branco e sem erro não tratado no console:
   - lista lateral: aviso "Não foi possível carregar os vídeos."
     (`VideoList.tsx:67`, `role="alert"`);
-  - modal de envio, ao escolher um arquivo: "O envio falhou. Escolha o mesmo
+  - modal de envio, ao escolher o arquivo e clicar em Enviar: "O envio falhou. Escolha o mesmo
     arquivo para retomar." (`UploadForm.tsx:32`, `role="alert"`);
   - detalhe de um vídeo: "Vídeo não encontrado." (`VideoDetail.tsx:68`; a tela
     não distingue 502 de 404, qualquer resposta não-ok cai aí).
