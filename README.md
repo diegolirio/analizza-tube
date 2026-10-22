@@ -19,6 +19,13 @@ YEROON_API_KEY=
 YEROON_WEBHOOK_SECRET=
 ```
 
+O web (`analizza-tube-web`) lê `ANALIZZA_API_URL` (padrão `http://localhost:8080`),
+o endereço do `-api` para onde seus Route Handlers repassam:
+
+```
+ANALIZZA_API_URL=
+```
+
 ## Testes
 
 | Comando | O que roda |
