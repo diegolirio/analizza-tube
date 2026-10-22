@@ -52,3 +52,6 @@ dist/
 
 # --- macOS ---
 .DS_Store
+
+# Workspace local dos planos (superpowers)
+.superpowers/
