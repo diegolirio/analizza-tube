@@ -4,7 +4,7 @@ type: screen-web
 
 # Vídeos hospedados pela yeroon play
 
-Upload pelo modal (com retomada), lista lateral, reprodução no iframe da
+Upload pelo modal (com retomada e progresso fora do modal), lista lateral, reprodução no iframe da
 yeroon play e webhook `video.ready`. Contrato:
 `docs/superpowers/specs/2026-10-21-yeroon-play-plugado-design.md`.
 
@@ -47,11 +47,16 @@ Subir é preparação; a conferência é na tela do `-web`.
 1. Abra `http://localhost:3000`, clique em enviar e escolha um vídeo pelo
    modal. No DevTools > Network, os `PUT` das partes vão para
    `*.r2.cloudflarestorage.com` (não para `localhost:8080`) e respondem 200.
-2. O vídeo aparece na lista lateral e passa de em processamento para
+2. Ao clicar em **Enviar**, o modal fecha na hora. O progresso aparece num
+   cartão "ENVIANDO" no topo da lista lateral (nome do arquivo, barra e
+   "N / M partes · X%"), e o botão do cabeçalho vira "Enviando… X%",
+   desabilitado. No fim, a tela abre o vídeo novo, o cartão some e o botão
+   volta a "Enviar vídeo".
+3. O vídeo aparece na lista lateral e passa de em processamento para
    **Pronto** (recarregue a lista se preciso; sem webhook configurado o estado
    vem da consulta à yeroon).
-3. Clique no vídeo pronto: o iframe da yeroon play abre e o vídeo toca.
-4. Nenhum `yk_` aparece no navegador: DevTools > Network (busque `yk_` em
+4. Clique no vídeo pronto: o iframe da yeroon play abre e o vídeo toca.
+5. Nenhum `yk_` aparece no navegador: DevTools > Network (busque `yk_` em
    cabeçalhos e respostas, com "Search" do painel) e Sources (busca global
    por `yk_`). Zero ocorrências.
 
@@ -70,8 +75,10 @@ Subir é preparação; a conferência é na tela do `-web`.
   tela, sem tela em branco e sem erro não tratado no console:
   - lista lateral: aviso "Não foi possível carregar os vídeos."
     (`VideoList.tsx:67`, `role="alert"`);
-  - modal de envio, ao escolher o arquivo e clicar em Enviar: "O envio falhou. Escolha o mesmo
-    arquivo para retomar." (`UploadForm.tsx:32`, `role="alert"`);
+  - envio: o modal fecha e o cartão na lista lateral troca o progresso por
+    "O envio de <arquivo> falhou." (`UploadJob.tsx`, `role="alert"`), com
+    **Tentar de novo** (retoma o mesmo arquivo, sem escolher de novo) e
+    **Descartar**;
   - detalhe de um vídeo: "Vídeo não encontrado." (`VideoDetail.tsx:68`; a tela
     não distingue 502 de 404, qualquer resposta não-ok cai aí).
   A mensagem "Serviço de vídeo indisponível." é o corpo do 502 da api (visível
@@ -84,7 +91,16 @@ Subir é preparação; a conferência é na tela do `-web`.
   arquivo de novo **começa um upload novo**: aparece um segundo vídeo na
   lista, e o primeiro segue sendo processado. Limitação esperada desta
   fatia, não é defeito a investigar.
-- Enviar arquivo que não é vídeo ou vazio; clicar em enviar duas vezes.
+- **Envio duplicado:** durante um envio, tente abrir o modal de novo pelo
+  cabeçalho (o botão está desabilitado) e abra `/upload` direto na URL: o
+  formulário avisa "Já há um envio em andamento" e o **Enviar** fica
+  desabilitado. Só um `POST /api/videos/uploads` pode aparecer no Network.
+- **Cancelar** no cartão durante o envio: o cartão some, o botão do cabeçalho
+  volta a "Enviar vídeo" e sai um `DELETE /api/videos/{id}/upload`.
+- **Navegar durante o envio:** clique em outros vídeos da lista enquanto
+  envia. O cartão e o progresso continuam; no fim, a tela vai para o vídeo
+  novo.
+- Enviar arquivo que não é vídeo ou vazio.
 
 ## O que não está na lista
 

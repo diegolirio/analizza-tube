@@ -1,56 +1,35 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
-import { UploadRejectedError, uploadVideo } from "@/lib/upload";
+import { useState } from "react";
 import { UploadIcon } from "./icons";
+import { useUploadJobContext } from "./UploadJob";
 
-export function UploadForm() {
-  const router = useRouter();
+/** Escolhe o arquivo e entrega o envio ao AppShell, que mostra o progresso fora do modal. */
+export function UploadForm({ onStarted }: { onStarted?: () => void }) {
+  const { busy, start } = useUploadJobContext();
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
-  const [progress, setProgress] = useState<[number, number] | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [cancelled, setCancelled] = useState(false);
-  const controller = useRef<AbortController | null>(null);
 
-  const start = async () => {
-    if (!file) return;
-    setError(null);
-    setCancelled(false);
-    const ctrl = new AbortController();
-    controller.current = ctrl;
-    try {
-      const { videoId } = await uploadVideo(file, {
-        signal: ctrl.signal,
-        onProgress: (sent, total) => setProgress([sent, total]),
-      });
-      router.push(`/videos/${videoId}`);
-    } catch (e) {
-      if ((e as Error).name === "AbortError") setCancelled(true);
-      else if (e instanceof UploadRejectedError) setError(e.message);
-      else setError("O envio falhou. Escolha o mesmo arquivo para retomar.");
-    } finally {
-      controller.current = null;
-      setProgress(null);
-    }
+  const send = () => {
+    if (!file || busy) return;
+    start(file);
+    setFile(null);
+    onStarted?.();
   };
 
-  const uploading = progress !== null;
-  const percent = progress ? Math.round((progress[0] / Math.max(progress[1], 1)) * 100) : 0;
   return (
     <div className="flex flex-col gap-5">
       <label
         htmlFor="arquivo"
         onDragOver={(e) => {
           e.preventDefault();
-          if (!uploading) setDragging(true);
+          if (!busy) setDragging(true);
         }}
         onDragLeave={() => setDragging(false)}
         onDrop={(e) => {
           e.preventDefault();
           setDragging(false);
-          if (!uploading) setFile(e.dataTransfer.files?.[0] ?? null);
+          if (!busy) setFile(e.dataTransfer.files?.[0] ?? null);
         }}
         className={`flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed bg-deep px-4 py-8 text-center ${dragging ? "border-accent" : "border-line-bold"}`}
       >
@@ -67,45 +46,21 @@ export function UploadForm() {
         id="arquivo"
         type="file"
         accept="video/*"
-        disabled={uploading}
+        disabled={busy}
         onChange={(e) => setFile(e.target.files?.[0] ?? null)}
         className="sr-only"
       />
 
-      {progress && (
-        <div className="flex flex-col gap-1.5">
-          <progress value={progress[0]} max={progress[1]} aria-label="Progresso do envio" className="sr-only" />
-          <div className="h-1 overflow-hidden rounded-full bg-line-strong" aria-hidden="true">
-            <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${percent}%` }} />
-          </div>
-          <span className="font-mono text-xs text-muted">
-            {progress[0]} / {progress[1]} partes · {percent}%
-          </span>
-        </div>
-      )}
-      {cancelled && <p className="m-0 text-sm text-muted">Envio cancelado.</p>}
-      {error && (
-        <p role="alert" className="m-0 rounded-lg border border-[#b4232340] bg-[#b423230f] px-3 py-2 text-sm text-[#b42323]">
-          {error}
-        </p>
-      )}
+      {busy && <p className="m-0 text-sm text-muted">Já há um envio em andamento. Acompanhe na lista de vídeos.</p>}
 
       <div className="flex justify-end gap-2 pt-1">
         <button
           type="button"
-          disabled={!uploading}
-          onClick={() => controller.current?.abort()}
-          className="h-11 cursor-pointer rounded-lg border border-line-strong bg-transparent px-[18px] text-sm font-semibold text-ink transition-colors hover:bg-[#1a1d1a0d] disabled:cursor-default disabled:opacity-50"
-        >
-          Cancelar
-        </button>
-        <button
-          type="button"
-          disabled={!file || uploading}
-          onClick={start}
+          disabled={!file || busy}
+          onClick={send}
           className="h-11 cursor-pointer rounded-lg border-0 bg-accent px-[18px] text-sm font-semibold text-white transition-colors hover:bg-accent-hover disabled:cursor-default disabled:opacity-50"
         >
-          {uploading ? "Enviando…" : "Enviar"}
+          Enviar
         </button>
       </div>
     </div>

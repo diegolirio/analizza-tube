@@ -15,7 +15,16 @@ type VideoItem = {
 const ACTIVE = ["ENVIADO", "PROCESSANDO"];
 const POLL_MS = 5000;
 
-export function VideoList({ currentId, query = "" }: { currentId?: string; query?: string }) {
+export function VideoList({
+  currentId,
+  query = "",
+  refreshKey = 0,
+}: {
+  currentId?: string;
+  query?: string;
+  /** Muda quando um envio termina: recarrega a lista mesmo com o polling parado. */
+  refreshKey?: number;
+}) {
   const [videos, setVideos] = useState<VideoItem[] | null>(null);
   const [error, setError] = useState(false);
   const polling = videos === null || videos.some((v) => ACTIVE.includes(v.status));
@@ -45,7 +54,7 @@ export function VideoList({ currentId, query = "" }: { currentId?: string; query
       cancelled = true;
       clearInterval(timer);
     };
-  }, [polling]);
+  }, [polling, refreshKey]);
 
   const term = query.trim().toLowerCase();
   const shown = (videos ?? []).filter((v) => v.fileName.toLowerCase().includes(term));
