@@ -28,7 +28,7 @@ Subir é preparação; a conferência é na tela do `-web`.
    curl -sS -X POST "https://api.dev.play.yeroon.video/admin/tenants" \
      -H "X-Admin-Token: $STREAM_PLATFORM_ADMIN_TOKEN" \
      -H "Content-Type: application/json" \
-     -d '{"name":"analizza-tube","allowedOrigins":["http://localhost:3000"]}'
+     -d '{"name":"my-tube","allowedOrigins":["http://localhost:3000"]}'
    ```
 
 3. **Variáveis no `.env` local** (fora do git; o `.env` está no `.gitignore`).

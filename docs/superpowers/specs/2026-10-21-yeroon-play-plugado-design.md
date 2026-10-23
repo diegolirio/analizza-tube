@@ -1,10 +1,10 @@
-# yeroon play plugado no analizza-tube — design
+# yeroon play plugado no my-tube — design
 
 Data: 2026-10-21. Status: rascunho para aprovação (revisado pelo builder check).
 
 ## Intenção
 
-O analizza-tube vai ser uma plataforma de **cursos**, e os vídeos das aulas
+O my-tube vai ser uma plataforma de **cursos**, e os vídeos das aulas
 ficam hospedados no **yeroon play**: storage, conversão HLS e player são da
 plataforma, consumidos pela API pública v1. O contrato está em
 `diegolirio/yeroon-streaming-poc`, `docs/api/v1.md`, que já está na `main` (o
@@ -13,24 +13,24 @@ plataforma, consumidos pela API pública v1. O contrato está em
 
 Os endereços do yeroon dev são dois:
 - **API:** `https://yeroon.streaming.diegolirio.com`. É o que o `-api` do
-  analizza-tube chama.
+  my-tube chama.
 - **Web:** `https://yeroon.streaming.poc.diegolirio.com`. É de onde vêm o
   `embedUrl` e o player do iframe. O
 projeto está no scaffold vazio, sem telas nem tabelas.
 
-Esta é a **primeira parte**: só plugar o yeroon play. O analizza-tube passa a
+Esta é a **primeira parte**: só plugar o yeroon play. O my-tube passa a
 enviar, listar e tocar vídeos pela v1, com **o mesmo visual do yeroon play**.
 Curso, módulo e aula vêm depois, em cima disto.
 
 ## Critério de sucesso
 
-Rodando o analizza-tube **na máquina do dev** (api `:8080`, web `:3000`),
+Rodando o my-tube **na máquina do dev** (api `:8080`, web `:3000`),
 contra o yeroon play dev já no ar (`https://yeroon.streaming.diegolirio.com`):
 
 1. **Enviar:** "Enviar vídeo" abre o modal, e o vídeo sobe com barra de
    progresso. Os bytes vão do navegador direto ao R2, sem passar pelo
-   analizza-tube nem pelo yeroon.
-2. **Listar:** a lista lateral mostra os vídeos do analizza-tube, com status e
+   my-tube nem pelo yeroon.
+2. **Listar:** a lista lateral mostra os vídeos do my-tube, com status e
    miniatura, e um vídeo em conversão vira "Pronto" sozinho.
 3. **Assistir:** abrir um vídeo pronto mostra o player do yeroon num
    `<iframe>` (o `embedUrl`), tocando.
@@ -46,8 +46,8 @@ contra o yeroon play dev já no ar (`https://yeroon.streaming.diegolirio.com`):
 - Curso, módulo, aula, aluno, matrícula e progresso por aluno. O `postMessage`
   de progresso fica de fora agora: só se ouve `ready` e `error` para o estado
   da tela.
-- Login e autorização. O analizza-tube local não tem usuários ainda.
-- Deploy do analizza-tube e mobile. O `-mobile` não muda nesta parte.
+- Login e autorização. O my-tube local não tem usuários ainda.
+- Deploy do my-tube e mobile. O `-mobile` não muda nesta parte.
 - Trocar de provedor de vídeo. Não há porta genérica `VideoProvider`; o
   cliente fala yeroon, e isso basta.
 
@@ -55,7 +55,7 @@ contra o yeroon play dev já no ar (`https://yeroon.streaming.diegolirio.com`):
 
 - A chave `yk_` (ou o segredo do webhook) no `-web`, no `-mobile`, em log ou
   versionada.
-- Guardar no analizza-tube o que é da plataforma: arquivo, partes, status,
+- Guardar no my-tube o que é da plataforma: arquivo, partes, status,
   renditions ou URL de mídia.
 - Chamar a v1 de verdade nos testes. Um dublê `@Primary` substitui o cliente,
   como manda o `INSTRUCTIONS.md`.
@@ -86,9 +86,9 @@ os testes rodam contra o dublê do cliente yeroon.
 
 3. **Cadastro do cliente**, com `curl` do administrador (`docs/api/v1.md`; o
    exemplo ali usa a porta `3001`, mas aqui vale a `3000`):
-   `name=analizza-tube`, `allowedOrigins=["http://localhost:3000"]` e sem
+   `name=my-tube`, `allowedOrigins=["http://localhost:3000"]` e sem
    `webhookUrl` por enquanto. A resposta traz `apiKey` e `webhookSecret`,
-   que vão para o `.env` local do analizza-tube e nunca para o git.
+   que vão para o `.env` local do my-tube e nunca para o git.
 4. **CORS do R2:** já libera `http://localhost:3000` (`deploy/r2-cors.json`),
    então o PUT das partes funciona daqui.
 
@@ -99,7 +99,7 @@ os testes rodam contra o dublê do cliente yeroon.
 - `video`: `id uuid` (o **`videoId` do yeroon**, que é a chave) e
   `created_at`. É só isto, porque o projeto decidiu guardar **só o
   `videoId`**. A tabela existe para registrar quais vídeos são do
-  analizza-tube e para as próximas partes (a aula vai apontar para ela).
+  my-tube e para as próximas partes (a aula vai apontar para ela).
 - `webhook_receipt`: `delivery_id` (pk, o `X-Yeroon-Delivery`), `event_type`,
   `video_id`, `received_at`. Serve para deduplicar.
 
@@ -119,7 +119,7 @@ os testes rodam contra o dublê do cliente yeroon.
 
   Os corpos e as respostas são os do `docs/api/v1.md`.
 - Erros da v1:
-  - `422` → repassa os `errors[]` como `422` do analizza-tube;
+  - `422` → repassa os `errors[]` como `422` do my-tube;
   - `404` → `404`;
   - `409` do playback-token → `409`;
   - `401` ou falha de rede → `502` com mensagem genérica, registrando no log o
@@ -171,9 +171,9 @@ sozinho, mesmo sem o webhook alcançar a máquina do dev.
   - `lib/videoStatus`;
   - o upload multipart com retomada (`lib/upload.ts`).
 
-  O nome no cabeçalho vira "analizza **tube**", com o mesmo tratamento do
+  O nome no cabeçalho vira "my **tube**", com o mesmo tratamento do
   "yeroon play".
-- Os Route Handlers `src/app/api/**` repassam ao `-api` (`ANALIZZA_API_URL`),
+- Os Route Handlers `src/app/api/**` repassam ao `-api` (`MY_TUBE_API_URL`),
   como no yeroon (`lib/repasse.ts`). O navegador só fala com o Next e com o
   R2.
 - **Assistir:** em `/videos/[id]`, quando está `PRONTO`, o web chama
@@ -181,7 +181,7 @@ sozinho, mesmo sem o webhook alcançar a máquina do dev.
   `<iframe src={embedUrl} allow="autoplay; fullscreen; picture-in-picture" allowFullScreen>`
   no quadro 16:9. O token é pedido a cada abertura e nunca é guardado. Um
   `postMessage` com `type: "error"` mostra a mensagem de erro no quadro.
-- O `UploadForm` usa as rotas do analizza-tube, com o mesmo formato de
+- O `UploadForm` usa as rotas do my-tube, com o mesmo formato de
   resposta do yeroon (`videoId`, `partSizeBytes`, `partCount`, `parts`), então o
   `lib/upload.ts` copiado funciona sem mudança, **com a retomada**.
 - *Decisão minha:* a lista mostra todos os status, inclusive `CANCELADO` e
@@ -199,7 +199,7 @@ sozinho, mesmo sem o webhook alcançar a máquina do dev.
   - id fora da tabela → 404;
   - `422` repassado;
   - webhook válido, repetido e com assinatura errada;
-  - a lista só com os ids do analizza-tube.
+  - a lista só com os ids do my-tube.
 - **Web:** Vitest para a lista, o modal e a tela de assistir (iframe com o
   `embedUrl`, estado de erro).
 
@@ -211,7 +211,7 @@ sozinho, mesmo sem o webhook alcançar a máquina do dev.
   - procurar `yk_` nos bundles;
   - opcional: webhook ponta a ponta com `cloudflared tunnel --url http://localhost:8080`
     e o `webhookUrl` do cliente apontando para o túnel.
-- As variáveis novas (`YEROON_*`, `ANALIZZA_API_URL`) na seção *Variáveis de
+- As variáveis novas (`YEROON_*`, `MY_TUBE_API_URL`) na seção *Variáveis de
   ambiente* do `INSTRUCTIONS.md` e no `README.md`, sem valor.
 
 ## Deixado para o builder

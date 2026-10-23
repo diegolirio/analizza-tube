@@ -1,7 +1,7 @@
-API_DIR    := analizza-tube-api
-CORE_DIR   := analizza-tube-core
-WEB_DIR    := analizza-tube-web
-MOBILE_DIR := analizza-tube-mobile
+API_DIR    := my-tube-api
+CORE_DIR   := my-tube-core
+WEB_DIR    := my-tube-web
+MOBILE_DIR := my-tube-mobile
 GRADLEW    := ./gradlew
 
 API_PORT ?= 8080
@@ -80,7 +80,7 @@ test-integration: ## Testes de integracao (*IT) sobre Testcontainers
 
 .PHONY: test-mutation
 test-mutation: ## Teste de mutacao (Pitest) sobre os unitarios; diagnostico, fora do test
-	$(GRADLEW) :analizza-tube-core:pitest
+	$(GRADLEW) :my-tube-core:pitest
 
 .PHONY: test-web
 test-web: $(WEB_DIR)/node_modules ## Lint, tipos e testes do web

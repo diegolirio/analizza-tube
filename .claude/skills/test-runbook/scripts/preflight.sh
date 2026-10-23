@@ -43,7 +43,7 @@ done
 
 echo
 echo "== banco =="
-if docker exec analizza-tube-postgres pg_isready -U analizza_tube >/dev/null 2>&1; then
+if docker exec my-tube-postgres pg_isready -U my_tube >/dev/null 2>&1; then
   echo "  no ar"
 else
   echo "  fora do ar, ou comando de health-check precisa de ajuste"

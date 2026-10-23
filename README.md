@@ -1,8 +1,8 @@
-# analizza-tube
+# my-tube
 
-Monorepo: `analizza-tube-api` (Spring Boot, entrada HTTP), `analizza-tube-core`
+Monorepo: `my-tube-api` (Spring Boot, entrada HTTP), `my-tube-core`
 (application/domain/infrastructure), `buildingBlocks` (contratos base),
-`analizza-tube-web` (Next.js) e `analizza-tube-mobile` (Expo). Convenções em
+`my-tube-web` (Next.js) e `my-tube-mobile` (Expo). Convenções em
 [docs/superpowers/INSTRUCTIONS.md](docs/superpowers/INSTRUCTIONS.md).
 
 `make help` lista os alvos. `make run` sobe o Postgres, a api (`:8080`) e o web
@@ -36,7 +36,7 @@ make up        # Postgres em Docker; as migrations rodam quando a api sobe
 
 ### 3. Chave da yeroon play (uma vez)
 
-O administrador da yeroon cadastra o analizza-tube como cliente. A resposta
+O administrador da yeroon cadastra o my-tube como cliente. A resposta
 traz a `apiKey` (`yk_…`) e o `webhookSecret` (`whsec_…`), e é a **única vez**
 em que esses valores aparecem. Grave a resposta direto num arquivo, assim os
 valores não passam pela tela nem ficam no histórico do shell:
@@ -45,8 +45,8 @@ valores não passam pela tela nem ficam no histórico do shell:
 curl -sS -X POST https://api.dev.play.yeroon.video/admin/tenants \
   -H "X-Admin-Token: $(cat ~/.yeroon-admin-token)" \
   -H "Content-Type: application/json" \
-  -d '{"name":"analizza-tube","allowedOrigins":["http://localhost:3000"]}' \
-  -o ~/.analizza-tube-yeroon.json -w '%{http_code}\n' && chmod 600 ~/.analizza-tube-yeroon.json
+  -d '{"name":"my-tube","allowedOrigins":["http://localhost:3000"]}' \
+  -o ~/.my-tube-yeroon.json -w '%{http_code}\n' && chmod 600 ~/.my-tube-yeroon.json
 ```
 
 A saída esperada é `201`. Rode **uma vez só**, porque cada chamada cria outro
@@ -55,7 +55,7 @@ cliente. Depois, gere o `.env` na raiz do repositório (ele está no
 
 ```bash
 jq -r '"YEROON_API_KEY=\(.apiKey)\nYEROON_WEBHOOK_SECRET=\(.webhookSecret)"' \
-  ~/.analizza-tube-yeroon.json > .env && chmod 600 .env
+  ~/.my-tube-yeroon.json > .env && chmod 600 .env
 ```
 
 O `allowedOrigins` é a origem que pode embutir o player. Se o web rodar em
@@ -97,32 +97,32 @@ runbook [docs/checkpoints/yeroon-play-plugado.md](docs/checkpoints/yeroon-play-p
 Como um app se integra à yeroon play depois de ter a chave e o cadastro
 (Instalação, passo 3). O contrato completo da API é o `docs/api/v1.md` do
 repositório `bjjdream/yeroon-play`. Cada passo abaixo aponta onde o
-analizza-tube implementa a integração, para servir de modelo.
+my-tube implementa a integração, para servir de modelo.
 
 ### Quem é quem
 
 | Peça | Dono | Onde roda | O que faz |
 |---|---|---|---|
-| **analizza-tube web** | analizza-tube | Navegador + servidor Next (`:3000`) | Telas. Os Route Handlers `/api/videos/**` repassam ao analizza-tube api |
-| **analizza-tube api** | analizza-tube | Spring Boot (`:8080`) | Guarda a chave `yk_` e só o `videoId`. Chama a v1 da yeroon e recebe o webhook |
+| **my-tube web** | my-tube | Navegador + servidor Next (`:3000`) | Telas. Os Route Handlers `/api/videos/**` repassam ao my-tube api |
+| **my-tube api** | my-tube | Spring Boot (`:8080`) | Guarda a chave `yk_` e só o `videoId`. Chama a v1 da yeroon e recebe o webhook |
 | **yeroon api (v1)** | yeroon play | `https://api.dev.play.yeroon.video` | Cria o upload, assina as URLs das partes, emite o token de reprodução e manda o webhook |
-| **R2 da yeroon** | yeroon play | bucket `yeroon-play-bucket-dev` no Cloudflare R2 | Guarda o original e o HLS. É **da yeroon**, não do analizza-tube |
+| **R2 da yeroon** | yeroon play | bucket `yeroon-play-bucket-dev` no Cloudflare R2 | Guarda o original e o HLS. É **da yeroon**, não do my-tube |
 | **yeroon async** | yeroon play | VPS da yeroon | Converte o original em HLS com ffmpeg |
 | **yeroon web (player)** | yeroon play | `https://play.dev.yeroon.video` | Página `/embed/{token}` que o iframe abre |
 
-Nas seções abaixo, **"seu back"** é o analizza-tube api e **"seu front"** é
-o analizza-tube web. Tudo o que é `/v1/...` é a yeroon.
+Nas seções abaixo, **"seu back"** é o my-tube api e **"seu front"** é
+o my-tube web. Tudo o que é `/v1/...` é a yeroon.
 
 ### Como o navegador grava no R2 da yeroon sem ter credencial
 
 Sim: o upload vai **direto do navegador para o R2 da yeroon**. Nem o
-analizza-tube api nem a yeroon api recebem os bytes do vídeo. Isso funciona
+my-tube api nem a yeroon api recebem os bytes do vídeo. Isso funciona
 com **URL pré-assinada** (presigned URL do S3):
 
-1. O analizza-tube api chama `POST /v1/videos/uploads`. A yeroon api abre um
+1. O my-tube api chama `POST /v1/videos/uploads`. A yeroon api abre um
    *multipart upload* no R2 dela (`CreateMultipartUpload`) e devolve o
    `videoId`, o tamanho de cada parte e quantas partes são.
-2. O analizza-tube api chama `POST /v1/videos/{id}/upload/part-urls`. A
+2. O my-tube api chama `POST /v1/videos/{id}/upload/part-urls`. A
    yeroon api, que tem as credenciais do R2, gera para cada parte uma URL de
    `UploadPart` **assinada**. A assinatura vale 1 h, só para aquele objeto,
    aquele upload e aquele número de parte. A URL é
@@ -131,7 +131,7 @@ com **URL pré-assinada** (presigned URL do S3):
    assinatura, aceita e devolve o `ETag`. Quem autoriza é a assinatura na
    própria URL, então o navegador não precisa de chave nenhuma.
 4. Para o navegador poder fazer esse `PUT` e ler o `ETag`, o **CORS do bucket
-   da yeroon** libera a origem do analizza-tube web (`http://localhost:3000`)
+   da yeroon** libera a origem do my-tube web (`http://localhost:3000`)
    com `PUT` e `ExposeHeaders: ETag`. Uma origem nova precisa ser pedida ao
    administrador da yeroon.
 5. O `complete` (`CompleteMultipartUpload`) junta as partes no R2. A partir
@@ -146,8 +146,8 @@ yeroon api, e os segmentos `.ts` vêm do R2 da yeroon por URLs GET assinadas.
 sequenceDiagram
     autonumber
     actor U as Usuário
-    participant AW as analizza-tube web<br/>(navegador + Next)
-    participant AA as analizza-tube api<br/>(guarda yk_ e videoId)
+    participant AW as my-tube web<br/>(navegador + Next)
+    participant AA as my-tube api<br/>(guarda yk_ e videoId)
     participant YA as yeroon api (v1)
     participant R2 as R2 da yeroon<br/>(bucket)
     participant YS as yeroon async<br/>(ffmpeg)
@@ -167,7 +167,7 @@ sequenceDiagram
     YA-->>AA: URLs de UploadPart pré-assinadas (1 h)
     AA-->>AW: urls
     loop cada parte (4 em paralelo)
-        AW->>R2: PUT bytes na URL assinada (CORS libera a origem do analizza-tube)
+        AW->>R2: PUT bytes na URL assinada (CORS libera a origem do my-tube)
         R2-->>AW: 200 + ETag
     end
     AW->>AA: POST /videos/{id}/upload/complete {parts: partNumber + etag}
@@ -210,22 +210,22 @@ acontece. O status continua chegando pela consulta `GET /videos/{id}`.
 
 **Três regras valem para tudo:**
 
-1. **A chave `yk_` fica só no analizza-tube api.** O navegador nunca a
-   recebe: ele fala com o servidor Next do analizza-tube, que repassa ao
-   analizza-tube api, que chama a v1 da yeroon.
-2. **O analizza-tube guarda só o `videoId`.** Arquivo, status, qualidades e
+1. **A chave `yk_` fica só no my-tube api.** O navegador nunca a
+   recebe: ele fala com o servidor Next do my-tube, que repassa ao
+   my-tube api, que chama a v1 da yeroon.
+2. **O my-tube guarda só o `videoId`.** Arquivo, status, qualidades e
    mídia ficam na yeroon. Leia o status da v1 quando precisar mostrá-lo.
 3. **Os bytes não passam por nenhum back.** O navegador faz o `PUT` das partes
    direto no R2 da yeroon, pelas URLs assinadas que a v1 devolve.
 
-### Back (analizza-tube api)
+### Back (my-tube api)
 
 **1. Cliente da v1.** Faça um cliente HTTP com
 `Authorization: Bearer ${YEROON_API_KEY}` e base
 `https://api.dev.play.yeroon.video`. Converta as respostas de erro da
 v1 assim:
 
-| v1 | Seu back responde | Exceção no analizza-tube |
+| v1 | Seu back responde | Exceção no my-tube |
 |---|---|---|
 | 422 (`errors[{code,message}]`) | 422 com os mesmos `errors` | `YeroonRejectedException` |
 | 404 | 404, sem repetir o id | `YeroonNotFoundException` |
@@ -285,11 +285,11 @@ boolean ok = MessageDigest.isEqual(esperado.getBytes(UTF_8), v1.getBytes(UTF_8))
 Modelo: `presenter/configuration/security/YeroonWebhookSignature.java` e
 `presenter/routes/webhook/receiveYeroonWebhook/ReceiveYeroonWebhookRoute.java`.
 
-### Front (analizza-tube web)
+### Front (my-tube web)
 
 **1. Rotas do próprio front.** O navegador fala só com o seu servidor. No
 Next, cada Route Handler em `src/app/api/videos/**` repassa ao back
-(`src/lib/repasse.ts`, com `ANALIZZA_API_URL`). O único outro destino do
+(`src/lib/repasse.ts`, com `MY_TUBE_API_URL`). O único outro destino do
 navegador é o R2, no `PUT` das partes.
 
 **2. Upload em partes, com retomada** (`src/lib/upload.ts`):
@@ -324,7 +324,7 @@ pronto, peça o `embedUrl` ao seu back e abra:
 
 O player só abre nas `allowedOrigins` do cadastro. Num app nativo, toque o
 `hlsUrl` que o `playback-token` também devolve (por exemplo, com
-`expo-video`). O back do analizza-tube hoje repassa só o `embedUrl`; para o
+`expo-video`). O back do my-tube hoje repassa só o `embedUrl`; para o
 mobile, ele precisa repassar o `hlsUrl` também.
 
 **4. Eventos do player (`postMessage`).** Aceite só mensagens da origem do
@@ -350,7 +350,7 @@ iframe.contentWindow?.postMessage(
 
 ## Variáveis de ambiente
 
-Lidas por `analizza-tube-api/src/main/resources/application.properties`; os
+Lidas por `my-tube-api/src/main/resources/application.properties`; os
 padrões moram lá.
 
 ```
@@ -359,11 +359,11 @@ YEROON_API_KEY=
 YEROON_WEBHOOK_SECRET=
 ```
 
-O web (`analizza-tube-web`) lê `ANALIZZA_API_URL` (padrão `http://localhost:8080`),
+O web (`my-tube-web`) lê `MY_TUBE_API_URL` (padrão `http://localhost:8080`),
 o endereço do `-api` para onde seus Route Handlers repassam:
 
 ```
-ANALIZZA_API_URL=
+MY_TUBE_API_URL=
 ```
 
 ## Testes
@@ -372,12 +372,12 @@ ANALIZZA_API_URL=
 |---|---|
 | `make test-backend` | `./gradlew test`: testes unitários, sem banco |
 | `make test-integration` | `./gradlew integrationTest`: classes `*IT` sobre Postgres em Testcontainers (precisa de Docker) |
-| `make test-mutation` | `./gradlew :analizza-tube-core:pitest`: teste de mutação dos unitários do `-core`; diagnóstico, fora do `make test` |
-| `make test-web` | lint, `typecheck` e Vitest do `analizza-tube-web` |
-| `make test-mobile` | `typecheck` e jest-expo do `analizza-tube-mobile` |
+| `make test-mutation` | `./gradlew :my-tube-core:pitest`: teste de mutação dos unitários do `-core`; diagnóstico, fora do `make test` |
+| `make test-web` | lint, `typecheck` e Vitest do `my-tube-web` |
+| `make test-mobile` | `typecheck` e jest-expo do `my-tube-mobile` |
 | `make test` | todos acima, menos o de mutação |
 
-Os testes de integração moram em `analizza-tube-integration-tests/`, todos
+Os testes de integração moram em `my-tube-integration-tests/`, todos
 estendendo `support/BaseIntegrationTest`. A regra
 `architecture/EntrypointHasIntegrationTestIT` exige um `<Nome>IT` para todo
 entrypoint (`@RestController`, método `@Scheduled`, …).
