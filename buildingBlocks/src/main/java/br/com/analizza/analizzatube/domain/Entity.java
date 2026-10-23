@@ -1,9 +1,0 @@
-package br.com.analizza.analizzatube.domain;
-
-public abstract class Entity {
-    private static final RuleChecker ruleChecker = new RuleChecker();
-
-    protected static void checkAllRules(BusinessRule... rules) {
-        ruleChecker.checkAllRules(rules);
-    }
-}

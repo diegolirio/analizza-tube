@@ -1,5 +1,5 @@
 // Versoes dos plugins declaradas uma vez so, na raiz -- os subprojetos
-// (analizza-tube-core, analizza-tube-api) aplicam sem versao. Um
+// (my-tube-core, my-tube-api) aplicam sem versao. Um
 // subprojeto so pode aplicar um plugin sem versao se ele ja estiver no
 // classpath do buildscript herdado da raiz.
 plugins {

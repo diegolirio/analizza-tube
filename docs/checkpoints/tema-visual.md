@@ -6,7 +6,7 @@ type: screen-web
 
 Um tema só, claro: fundo branco predominante, texto quase preto e acento
 verde. As cores moram nos tokens `@theme` de
-`analizza-tube-web/src/app/globals.css`. Os poucos tons fixos que sobraram nos
+`my-tube-web/src/app/globals.css`. Os poucos tons fixos que sobraram nos
 componentes (sobreposição no hover, selo de status, alerta de erro) foram
 acertados para o fundo claro.
 
@@ -18,6 +18,7 @@ vídeo enviado.
 
 ## 1. O que precisa bater
 
+- **Nome:** o logo diz "my **tube**" e a aba do navegador diz "my tube".
 - **Início:** fundo branco, logo com o quadrado verde-escuro e "tube" em verde,
   botão **Enviar vídeo** verde com texto branco, área "Escolha um vídeo" em
   cinza bem claro.
@@ -47,7 +48,8 @@ vídeo enviado.
 Estranhe qualquer resto do tema escuro: um violeta, um creme ou um fundo
 marrom-escuro em algum canto que esta lista não citou. Cores fixas nos
 componentes (`bg-[#…]`, `text-[#…]`) escapam dos tokens, e alguma pode ter
-ficado para trás.
+ficado para trás. Estranhe também qualquer "analizza" que ainda apareça na
+tela, na aba ou numa mensagem: o app se chama my-tube.
 
 ## 4. O que este checkpoint já pegou
 

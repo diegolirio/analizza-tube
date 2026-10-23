@@ -1,7 +1,0 @@
-package br.com.analizza.analizzatube.application.video.presignParts;
-
-import java.util.List;
-
-public record PresignPartsResult(List<PartUrl> urls) {
-    public record PartUrl(int partNumber, String url) {}
-}

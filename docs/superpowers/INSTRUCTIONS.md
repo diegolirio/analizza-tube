@@ -12,23 +12,23 @@ primeira fatia vertical.
 | Módulo | Papel |
 |---|---|
 | `buildingBlocks` | `Java` puro. Contratos base de Command, Query e domínio. Sem Spring |
-| `analizza-tube-api` | Spring Boot. `presenter/`: rotas e configuração de entrada |
-| `analizza-tube-core` | `application/`, `domain/` e `infrastructure/`. **Pode usar Spring** |
-| `analizza-tube-web` | Next.js |
-| `analizza-tube-mobile` | Expo / React Native |
+| `my-tube-api` | Spring Boot. `presenter/`: rotas e configuração de entrada |
+| `my-tube-core` | `application/`, `domain/` e `infrastructure/`. **Pode usar Spring** |
+| `my-tube-web` | Next.js |
+| `my-tube-mobile` | Expo / React Native |
 
 **A seta é sempre `-api → -core → buildingBlocks`.** O `-core` não conhece o
-`-api`: nenhuma classe do `-core` importa nada de `br.com.analizza.analizzatube.presenter`, e o
+`-api`: nenhuma classe do `-core` importa nada de `br.com.mytube.presenter`, e o
 `build.gradle` do `-core` não declara o `-api` como dependência — só o
 contrário. O `-core` **pode** depender de Spring (veja a seção seguinte); o
 que ele não faz é depender do módulo de entrada.
 
 ### O que mora onde
 
-Pacote base: `br.com.analizza.analizzatube`, o mesmo nos três módulos `Java` — não há
+Pacote base: `br.com.mytube`, o mesmo nos três módulos `Java` — não há
 sufixo por módulo. A camada é o primeiro segmento depois da raiz, e é ela,
 não o módulo, que dá o nome ao pacote. Por isso `buildingBlocks` e o `-core`
-compartilham `br.com.analizza.analizzatube.application` e `br.com.analizza.analizzatube.domain`: são o mesmo
+compartilham `br.com.mytube.application` e `br.com.mytube.domain`: são o mesmo
 pacote em módulos diferentes (split package), de propósito.
 
 #### `buildingBlocks` — os contratos
@@ -48,7 +48,7 @@ camadas preenchem. Quando usar cada um está na seção *Os contratos do
 `buildingBlocks`*. É o único código que o scaffold entrega pronto,
 justamente porque é forma e não domínio.
 
-#### `analizza-tube-api` — só a entrada
+#### `my-tube-api` — só a entrada
 
 ```
 Application                        ponto de entrada; a raiz do component scan
@@ -75,7 +75,7 @@ Command, chama o handler e traduz o resultado em log. O gatilho é o
 relógio em vez de HTTP, e só isso muda. Um job não tem regra de negócio,
 pelo mesmo motivo que uma Route não tem.
 
-#### `analizza-tube-core` — domínio, casos de uso e saída
+#### `my-tube-core` — domínio, casos de uso e saída
 
 ```
 domain/
@@ -122,7 +122,7 @@ a `@Entity` JPA e a interface do Spring Data) mora em
 módulo": o `-core` implementa suas próprias portas.
 
 Os recursos de saída — templates de mensagem, layouts de documento gerado e
-afins — moram em `analizza-tube-core/src/main/resources/<saída>/` (por
+afins — moram em `my-tube-core/src/main/resources/<saída>/` (por
 exemplo `mail/templates/`), pelo mesmo critério das migrations: são saída,
 pertencem ao `-core` e chegam ao classpath do `-api` pela dependência de
 projeto. O prefixo não pode colidir com as pastas que o Spring Boot varre
@@ -145,7 +145,7 @@ decidindo se algo que chegou pode entrar? A primeira resposta é
 
 O `-core` depende de `spring-boot-starter-data-jpa` e das demais dependências
 de saída que o caso de uso exigir — veja o `build.gradle` do
-`analizza-tube-core`.
+`my-tube-core`.
 `@Component` em handler, `@Entity` e `@Repository` em `infrastructure/`,
 `@Configuration` para os beans de saída — tudo isso é normal aqui.
 
@@ -187,8 +187,8 @@ quando isso simplificar; o que não pode é uma Query mudar estado.
 Dezesseis arquivos, um contrato por arquivo — inclusive `ErrorMessage` e
 `ListErrorMessage`, cada um no seu próprio arquivo: a regra de um tipo
 público por arquivo do Java não permite os dois num só — distribuídos em três
-pacotes: `br.com.analizza.analizzatube.application` e `br.com.analizza.analizzatube.domain` (`Java` puro, sem
-Spring) e `br.com.analizza.analizzatube.presenter.exception`. Quando usar cada um:
+pacotes: `br.com.mytube.application` e `br.com.mytube.domain` (`Java` puro, sem
+Spring) e `br.com.mytube.presenter.exception`. Quando usar cada um:
 
 - **`CommandHandler<TCommand>`** — escrita sem retorno.
 - **`CommandBase` / `QueryBase`** — implementações prontas de `Command` e
@@ -240,7 +240,7 @@ escolher esse caminho, substitua esta decisão e registre a troca aqui.)
 **Padrão: exceção.** Uma regra de domínio quebrada estoura
 `BusinessRulesBrokenException` (do `buildingBlocks`), e um
 `GlobalExceptionHandler`, em
-`analizza-tube-api/.../presenter/configuration/exception/`, a converte em
+`my-tube-api/.../presenter/configuration/exception/`, a converte em
 422, com um `errors` no corpo listando o `code` e a `message` de cada
 `BusinessRule` que quebrou. Fatia nova que precisa de um novo tipo de erro
 acrescenta um `@ExceptionHandler` ali, não inventa formato próprio.
@@ -343,7 +343,7 @@ disponível, a opção comum é um armazenamento seguro do próprio aparelho
 
 ### Migrations
 
-`analizza-tube-core/src/main/resources/db/migration/`, no formato do Flyway
+`my-tube-core/src/main/resources/db/migration/`, no formato do Flyway
 (`V1__descricao.sql`). Ficam no `-core` porque o schema pertence ao domínio,
 não ao transporte HTTP. Chegam ao classpath do `-api` pela dependência de
 projeto.
@@ -363,11 +363,11 @@ Montados pela skill `analizza-integration-test`.
 - **Todo entrypoint tem os dois tipos de teste, e nenhum substitui o outro.**
   Regra de domínio e handler: teste unitário, sem Spring e sem banco, com
   dublê da dependência externa cobrindo exaustivamente os ramos de erro.
-  Route, job, tool MCP e infraestrutura: teste de integração em `analizza-tube-integration-tests`,
+  Route, job, tool MCP e infraestrutura: teste de integração em `my-tube-integration-tests`,
   classe terminada em `IT`, estendendo `BaseIntegrationTest`, sobre um único
   container de banco para a suíte inteira, provando o fluxo contra o sistema
   de verdade.
-- **`analizza-tube-integration-tests` é o único módulo com Testcontainers.** É ele quem sobe os containers e testa
+- **`my-tube-integration-tests` é o único módulo com Testcontainers.** É ele quem sobe os containers e testa
   a infraestrutura de ponta a ponta através do `BaseIntegrationTest`.
 - Serviço de saída sem container (e-mail, gateway de terceiro) ganha um dublê `@Primary` no
   `TestConfig`: nenhuma mensagem nem chamada sai da suíte.
@@ -380,7 +380,7 @@ Montados pela skill `analizza-integration-test`.
   resposta que a tool devolveu.
 - `./gradlew test` roda só o que não precisa de banco; `./gradlew integrationTest` sobe o
   container. Os dois se separam pelo sufixo `IT`, não por tag.
-- **Teste de mutação mede os unitários, não a cobertura.** O Pitest roda em `analizza-tube-core`
+- **Teste de mutação mede os unitários, não a cobertura.** O Pitest roda em `my-tube-core`
   contra os `*Test` (`make test-mutation`), fora do `make test` e sem limiar: o mutation score é
   diagnóstico. Mutante sobrevivente é assert fraco ou ramo sem teste — ou mutante equivalente,
   que se documenta e aceita, sem silenciar a métrica.
@@ -447,7 +447,7 @@ Variáveis da integração com a yeroon play (README, sem valor):
 - `YEROON_API_URL`: lida pelo `-api`; padrão na configuração.
 - `YEROON_API_KEY`: lida pelo `-api`; segredo, só no `.env` local.
 - `YEROON_WEBHOOK_SECRET`: lida pelo `-api`; segredo, só no `.env` local.
-- `ANALIZZA_API_URL`: lida pelo `-web`, para onde os Route Handlers repassam.
+- `MY_TUBE_API_URL`: lida pelo `-web`, para onde os Route Handlers repassam.
 
 O porquê: o `.env.local` não vai para o repositório, e o README é a única
 lista versionada do que a aplicação precisa para subir. Sem ela, uma variável
@@ -496,7 +496,7 @@ o uso em desenvolvimento; quem mexer na área decide se fecha junto.
 Um item entra no mesmo commit que cria a dívida, não depois. Um débito que só
 existe na cabeça de quem o criou é um defeito esperando para ser redescoberto.
 
-- **Cast do `ref` em `analizza-tube-mobile/src/components/app-tabs.web.tsx`.**
+- **Cast do `ref` em `my-tube-mobile/src/components/app-tabs.web.tsx`.**
   O template do Expo SDK 58 não passava no `tsc`: o `expo-router` 58.0.25 tipa
   o `ref` de `TabTriggerSlotProps` como `RefAttributes<View>` (o componente,
   não a instância), e o `Pressable` do RN 0.88 espera a instância. O `TabButton`
@@ -506,7 +506,7 @@ existe na cabeça de quem o criou é um defeito esperando para ser redescoberto.
 
 ## Contexto: hospedagem de vídeo pela yeroon play
 
-O analizza-tube é o primeiro cliente da plataforma **yeroon play** e hospeda
+O my-tube é o primeiro cliente da plataforma **yeroon play** e hospeda
 os vídeos por ela. Implementado na fatia `yeroon-play-plugado` (runbook em
 `docs/checkpoints/yeroon-play-plugado.md`).
 
@@ -514,7 +514,7 @@ Contrato: repositório `bjjdream/yeroon-play`, branch `main`,
 arquivo `docs/api/v1.md`. Leia o contrato antes de
 implementar; o resumo abaixo não o substitui.
 
-- **O banco do analizza-tube guarda só o `videoId`.** Arquivo, partes,
+- **O banco do my-tube guarda só o `videoId`.** Arquivo, partes,
   transcodificação e playback ficam na plataforma.
 - **Chave de API:** o `-core` guarda a chave `yk_` (variável `YEROON_API_KEY`)
   e chama `/v1/videos/**` com `Authorization: Bearer`. A chave nunca chega ao
@@ -533,4 +533,4 @@ implementar; o resumo abaixo não o substitui.
   `infrastructure/data/anticorruptionLayer/yeroon/` (interface) e
   `.../yeroon/impl/` (implementação), no `-core`. Nos testes, um dublê
   `@Primary` substitui o cliente; nenhuma chamada sai da suíte.
-- Variáveis de ambiente: ver *Variáveis de ambiente* (`YEROON_*` e `ANALIZZA_API_URL`; o `-web` assume `http://localhost:8080` quando esta última falta).
+- Variáveis de ambiente: ver *Variáveis de ambiente* (`YEROON_*` e `MY_TUBE_API_URL`; o `-web` assume `http://localhost:8080` quando esta última falta).

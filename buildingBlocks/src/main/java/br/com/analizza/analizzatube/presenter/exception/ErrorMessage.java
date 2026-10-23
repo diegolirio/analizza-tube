@@ -1,7 +1,0 @@
-package br.com.analizza.analizzatube.presenter.exception;
-
-public record ErrorMessage(String code, String message, String details) {
-    public ErrorMessage(String code, String message) {
-        this(code, message, null);
-    }
-}

@@ -1,5 +1,0 @@
-package br.com.analizza.analizzatube.application.video.completeUpload;
-
-import java.util.UUID;
-
-public record CompleteUploadResult(UUID videoId, String status) {}

@@ -1,8 +1,8 @@
-# yeroon play plugado no analizza-tube — Implementation Plan
+# yeroon play plugado no my-tube — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** O analizza-tube envia, lista e toca vídeos pela API v1 do yeroon
+**Goal:** O my-tube envia, lista e toca vídeos pela API v1 do yeroon
 play, com o mesmo visual do yeroon play, e recebe o webhook assinado.
 
 **Architecture:** O `-core` tem um cliente da v1 (camada anticorrupção) e
@@ -21,8 +21,8 @@ Vitest.
 ## Global Constraints
 
 **Repos e pacotes**
-- **Repo analizza-tube:** `/Users/diegolirio/Documents/Github/analizza-tube`,
-  pacote base `br.com.analizza.analizzatube`. Siga o `docs/superpowers/INSTRUCTIONS.md`:
+- **Repo my-tube:** `/Users/diegolirio/Documents/Github/my-tube`,
+  pacote base `br.com.mytube`. Siga o `docs/superpowers/INSTRUCTIONS.md`:
   - rota em `-api/presenter/routes/<agregado>/<casoDeUso>/XRoute`, com o
     Request no mesmo pacote;
   - Command/Query, Handler e Result em
@@ -57,7 +57,7 @@ Vitest.
   - `YEROON_API_URL`, com padrão a URL da API acima;
   - `YEROON_API_KEY`;
   - `YEROON_WEBHOOK_SECRET`;
-  - `ANALIZZA_API_URL`, com padrão `http://localhost:8080`.
+  - `MY_TUBE_API_URL`, com padrão `http://localhost:8080`.
 
 **Segredos**
 - A chave `yk_` e o segredo `whsec_` nunca aparecem no `-web`, em log ou no
@@ -134,8 +134,8 @@ funcionar sem mudança:
 
 ### Task 2: Base — migration, domínio, erros
 
-**Files** (analizza-tube):
-- Create: `analizza-tube-core/src/main/resources/db/migration/V1__video_e_webhook.sql`,
+**Files** (my-tube):
+- Create: `my-tube-core/src/main/resources/db/migration/V1__video_e_webhook.sql`,
   com:
   - `video(id uuid primary key, created_at timestamptz not null)`;
   - `webhook_receipt(delivery_id varchar(100) primary key, event_type varchar(50) not null, video_id uuid, received_at timestamptz not null)`.
@@ -152,15 +152,15 @@ funcionar sem mudança:
   `VideoJpaRepository`, `VideoRepositoryImpl`, `WebhookReceiptJpaRepository`
   e `WebhookReceiptRepositoryImpl`. O `registerIfNew` usa um insert nativo
   `... on conflict (delivery_id) do nothing` e devolve `linhas == 1`.
-- Create: `analizza-tube-api/src/main/java/br/com/analizza/analizzatube/presenter/configuration/exception/GlobalExceptionHandler.java`.
+- Create: `my-tube-api/src/main/java/br/com/mytube/presenter/configuration/exception/GlobalExceptionHandler.java`.
   Mapeamentos:
   - `BusinessRulesBrokenException` → 422 `errors`;
   - `VideoNotFoundException` → 404 "Vídeo não encontrado.".
 
   As exceções do yeroon entram na Task 3.
-- Modify: `analizza-tube-api/src/main/resources/application.properties`,
+- Modify: `my-tube-api/src/main/resources/application.properties`,
   com `spring.mvc.problemdetails.enabled=true`.
-- Test: `analizza-tube-integration-tests/src/test/java/br/com/analizza/analizzatube/infrastructure/VideoRepositoryIT.java`.
+- Test: `my-tube-integration-tests/src/test/java/br/com/mytube/infrastructure/VideoRepositoryIT.java`.
 
 - [ ] **Step 1: Escrever o `VideoRepositoryIT`:**
   - `salvaELeOsIds`: dois `Video.register`, e `findAllIds()` contém os dois;
@@ -178,7 +178,7 @@ funcionar sem mudança:
 ### Task 3: Cliente da v1 (anticorrupção)
 
 **Files:**
-- Create: `analizza-tube-core/src/main/java/br/com/analizza/analizzatube/infrastructure/configuration/YeroonProperties.java`.
+- Create: `my-tube-core/src/main/java/br/com/mytube/infrastructure/configuration/YeroonProperties.java`.
   É `@ConfigurationProperties("yeroon") record YeroonProperties(URI apiUrl, String apiKey, String webhookSecret, Duration timeout)`,
   com padrão `apiUrl=https://yeroon.streaming.diegolirio.com` e `timeout=10s`.
   No `application.properties` do `-api`:
@@ -197,7 +197,7 @@ funcionar sem mudança:
   - `YeroonNotFoundException` → 404 genérico;
   - `YeroonConflictException` → 409;
   - `YeroonUnavailableException` → 502 "Serviço de vídeo indisponível.".
-- Test: `analizza-tube-core/src/test/java/.../infrastructure/data/anticorruptionLayer/yeroon/impl/YeroonClientImplTest.java`.
+- Test: `my-tube-core/src/test/java/.../infrastructure/data/anticorruptionLayer/yeroon/impl/YeroonClientImplTest.java`.
   É unitário, contra um `com.sun.net.httpserver.HttpServer` local, como o
   `StorageConfigurationTest` do yeroon.
 
@@ -245,7 +245,7 @@ class YeroonUnavailableException extends RuntimeException {} // 401/403/5xx/rede
   - `erro401ViraUnavailableSemAChaveNaMensagem`: `getMessage()` não contém
     `yk_teste`.
   - `servidorForaViraUnavailable`: porta fechada.
-- [ ] **Step 2: Rodar `./gradlew :analizza-tube-core:test --tests '*YeroonClientImplTest'`.**
+- [ ] **Step 2: Rodar `./gradlew :my-tube-core:test --tests '*YeroonClientImplTest'`.**
   Esperado: FAIL.
 - [ ] **Step 3: Implementar o `YeroonClientImpl`** com `RestClient`
   (`baseUrl=apiUrl`, header padrão `Authorization`, timeout pelo
@@ -258,7 +258,7 @@ class YeroonUnavailableException extends RuntimeException {} // 401/403/5xx/rede
 ### Task 4: Rotas de upload
 
 **Files:**
-- Create, em `analizza-tube-core/.../application/video/`, Command (ou Query),
+- Create, em `my-tube-core/.../application/video/`, Command (ou Query),
   Handler e Result de cada um:
   - `initUpload`: grava `Video.register(videoId)` e devolve `YeroonUpload`;
   - `presignParts`;
@@ -268,13 +268,13 @@ class YeroonUnavailableException extends RuntimeException {} // 401/403/5xx/rede
 
   Todos, menos o `initUpload`, começam com
   `if (!videos.existsById(id)) throw new VideoNotFoundException()`.
-- Create, em `analizza-tube-api/.../presenter/routes/video/<casoDeUso>/`:
+- Create, em `my-tube-api/.../presenter/routes/video/<casoDeUso>/`:
   - `InitUploadRoute` (`POST /videos/uploads` → 201);
   - `PresignUploadPartsRoute` (`POST /videos/{id}/upload/part-urls`);
   - `ListUploadedPartsRoute` (`GET /videos/{id}/upload/parts`);
   - `CompleteUploadRoute` (`POST /videos/{id}/upload/complete`);
   - `CancelUploadRoute` (`DELETE /videos/{id}/upload` → 204).
-- Create: `analizza-tube-integration-tests/.../support/FakeYeroonClient.java`,
+- Create: `my-tube-integration-tests/.../support/FakeYeroonClient.java`,
   um `implements YeroonClient` em memória, com:
   - `Map<UUID, YeroonVideo>`;
   - um contador de chamadas;
@@ -336,7 +336,7 @@ class YeroonUnavailableException extends RuntimeException {} // 401/403/5xx/rede
 ### Task 6: Webhook do yeroon
 
 **Files:**
-- Create: `analizza-tube-api/.../presenter/configuration/security/YeroonWebhookSignature.java`,
+- Create: `my-tube-api/.../presenter/configuration/security/YeroonWebhookSignature.java`,
   com `static boolean verify(String secret, String header, String rawBody, Instant now)`
   e tolerância de 300 s.
 - Create: `-core/application/webhook/receiveYeroonEvent/`, com
@@ -349,7 +349,7 @@ class YeroonUnavailableException extends RuntimeException {} // 401/403/5xx/rede
   - Assinatura inválida → 401 `ProblemDetail` sem detalhe.
   - Válida → lê `data.videoId` do corpo e responde 200.
 - Test:
-  - `analizza-tube-api/src/test/java/.../YeroonWebhookSignatureTest.java`,
+  - `my-tube-api/src/test/java/.../YeroonWebhookSignatureTest.java`,
     unitário;
   - `ReceiveYeroonWebhookRouteIT`.
 
@@ -375,17 +375,17 @@ class YeroonUnavailableException extends RuntimeException {} // 401/403/5xx/rede
 
 **Files** (copiar de
 `/Users/diegolirio/Documents/Github/yeroon-stream-poc/yeroon-stream-poc-web/src/`
-para `analizza-tube-web/src/`):
+para `my-tube-web/src/`):
 - **Copiar como estão** (com os testes):
   - `app/globals.css`;
   - `components/icons.tsx`, `AppShell.tsx`, `VideoList.tsx`,
     `UploadDialog.tsx`, `UploadForm.tsx`;
   - `lib/upload.ts`, `lib/videoStatus.ts`, `lib/repasse.ts`.
 - **Ajustes:**
-  - `lib/repasse.ts`: usa `process.env.ANALIZZA_API_URL ?? "http://localhost:8080"`.
-  - `AppShell`: o logo é "analizza <span italic accent>tube</span>".
+  - `lib/repasse.ts`: usa `process.env.MY_TUBE_API_URL ?? "http://localhost:8080"`.
+  - `AppShell`: o logo é "my <span italic accent>tube</span>".
   - `app/layout.tsx`: fontes Geist, Geist Mono e Source Serif 4,
-    `lang="pt-BR"` e título "analizza tube".
+    `lang="pt-BR"` e título "my tube".
   - `app/page.tsx`: o mesmo estado vazio "Escolha um vídeo".
   - `app/upload/page.tsx`.
   - `app/videos/[id]/page.tsx`.
@@ -428,7 +428,7 @@ para `analizza-tube-web/src/`):
 - [ ] **Step 3: Copiar, ajustar e implementar** como acima.
 - [ ] **Step 4: Rodar `make test-web`.** Esperado: lint, typecheck e testes
   PASS.
-- [ ] **Step 5: Rodar `cd analizza-tube-web && npm run build && grep -r "yk_" .next/static | wc -l`.**
+- [ ] **Step 5: Rodar `cd my-tube-web && npm run build && grep -r "yk_" .next/static | wc -l`.**
   Esperado: `0`.
 - [ ] **Step 6: Commit**: `feat(web): yeroon play look with upload modal and embedded player`.
 

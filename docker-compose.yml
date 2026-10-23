@@ -1,17 +1,17 @@
 services:
   postgres:
     image: postgres:17-alpine
-    container_name: analizza-tube-postgres
+    container_name: my-tube-postgres
     environment:
-      POSTGRES_DB: analizza_tube
-      POSTGRES_USER: analizza_tube
-      POSTGRES_PASSWORD: analizza_tube
+      POSTGRES_DB: my_tube
+      POSTGRES_USER: my_tube
+      POSTGRES_PASSWORD: my_tube
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U analizza_tube -d analizza_tube"]
+      test: ["CMD-SHELL", "pg_isready -U my_tube -d my_tube"]
       interval: 5s
       timeout: 3s
       retries: 10
